@@ -49,16 +49,16 @@ H5Superblock::H5Superblock(const char *fileAddress):
 
 int H5Superblock::groupLeafNodeK() const
 {
-   return  uint16(16); //*(uint16_t*)(fileAddress(16));
+   return  uint16(16);
 }
 
 int H5Superblock::groupInternalNodeK() const
 {
-   return  uint16(18); //return  *(uint16_t*)(fileAddress(18));
+   return  uint16(18);
 }
 
 H5SymbolTableEntry H5Superblock::rootGroupSymbolTableEntry() const
 {
-   return H5SymbolTableEntry(at(24+4*8)); //(const char *)fileAddress(24+4*8);
+   return H5SymbolTableEntry(at(24+4*8));
 }
 

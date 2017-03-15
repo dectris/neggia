@@ -2,10 +2,6 @@ FROM  centos:centos7.2.1511
 
 RUN echo "http_caching=none" >> /etc/yum.conf
 RUN yum clean all
-
-#
-# Install additional repositories
-#
 RUN yum -y install epel-release
 RUN yum -y install cmake3 git gcc gcc-c++ make zlib-devel
 RUN git clone https://github.com/dectris/DectrisHdf5.git DectrisHdf5

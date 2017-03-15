@@ -39,9 +39,7 @@ SOFTWARE.
 
 H5SymbolTableEntry::H5SymbolTableEntry(const char *fileAddress, size_t offset):
    H5Object(fileAddress,offset)
-{
-   //this->objectHeader();
-}
+{}
 
 H5SymbolTableEntry::H5SymbolTableEntry(const H5Object &other):
    H5Object(other)

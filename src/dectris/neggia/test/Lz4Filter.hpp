@@ -220,9 +220,6 @@ const H5Z_class2_t H5Z_LZ4[1] = {{
                                     (H5Z_func_t)lz4_filter,         /* The actual filter function   */
                                  }};
 
-//H5PL_type_t   H5PLget_plugin_type(void) {return H5PL_TYPE_FILTER;}
-//const void *H5PLget_plugin_info(void) {return H5Z_LZ4;}
-
 inline herr_t h5RegisterLZ4Comression() {
    return H5Zregister(H5Z_LZ4);
 }
