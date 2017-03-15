@@ -137,7 +137,7 @@ TEST_F(TestXdsPlugin, TestInfoArrayFromGetData) {
     int nx, ny, nbytes, number_of_frames;
     float qx, qy;
     get_header(&nx, &ny, &nbytes, &qx, &qy, &number_of_frames, info_array, &error_flag);
-    int frameNumber = 0;
+    int frameNumber = 1;
     int dataArrayCompare[nx*ny];
     get_data(&frameNumber, &nx, &ny, dataArrayCompare, info_array, &error_flag);
     ASSERT_EQ(info_array[0], DECTRIS_VENDOR);

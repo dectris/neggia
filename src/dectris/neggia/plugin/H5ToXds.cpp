@@ -34,6 +34,7 @@ SOFTWARE.
 #include <sstream>
 #include "H5Error.h"
 
+
 namespace {
 
 struct H5DataCache {
@@ -50,12 +51,9 @@ struct H5DataCache {
 
 std::unique_ptr<H5DataCache> GLOBAL_HANDLE = nullptr;
 
-
-void prototypeWarning() {
-   std::cerr << "WARNING: THIS IS PROTOTYPE VERSION OF DECTRIS HDF5 LIBRARY" << std::endl;
-   std::cerr << "         USE FOR TESTING ONLY!!!" << std::endl;
+void printVersionInfo() {
+   std::cout << "This is neggia " << VERSION << " (Copyright Dectris 2017)" << std::endl;
 }
-
 
 template<class T> void applyMaskAndTransformToInt32(const T * indata, int outdata[], const uint32_t * maskData, size_t size) {
     constexpr size_t maxSigned = (size_t)std::numeric_limits<int>::max();
@@ -115,7 +113,9 @@ H5DataCache * getPreopenedDataCache () {
 }
 
 size_t correctFrameNumberOffset(int frameNumberStartingFromOne) {
-    if(frameNumberStartingFromOne < 1) throw H5Error(-2, "ERROR: Framenumbers start from 1");
+    if(frameNumberStartingFromOne < 1) {
+        throw H5Error(-2, "ERROR: Framenumbers start from 1");
+    }
     return (size_t) frameNumberStartingFromOne - 1;
 }
 
@@ -125,7 +125,7 @@ size_t getFrameNumberWithinDataset(size_t globalFrameNumber, const H5DataCache *
 
 std::string getPathToDataset(size_t globalFrameNumber, const H5DataCache* dataCache)
 {
-    int datasetNumber = globalFrameNumber / dataCache->nframesPerDataset + 1;
+    size_t datasetNumber = globalFrameNumber / dataCache->nframesPerDataset + 1;
     std::stringstream ss;
     ss << "/entry/data/data_" << std::setw(6) << std::setfill('0') << datasetNumber;
     return ss.str();
@@ -158,9 +158,9 @@ void setPixelMask(H5DataCache* dataCache) {
        assert(pixelMask.dataSize() == sizeof(uint32_t));
        auto dim(pixelMask.dim());
        assert(dim.size() == 2);
-       dataCache->dimx = dim[1];
-       dataCache->dimy = dim[0];
-       size_t s = dataCache->dimx * dataCache->dimy;
+       dataCache->dimx = (int)dim[1];
+       dataCache->dimy = (int)dim[0];
+       size_t s = (size_t )(dataCache->dimx * dataCache->dimy);
        dataCache->pixelMask.reset(new uint32_t[s]);
        pixelMask.read(dataCache->pixelMask.get());
     } catch (const std::out_of_range &) {
@@ -265,7 +265,7 @@ void plugin_open(const char * filename,
                       int * error_flag) {
     setInfoArray(info_array);
     *error_flag = 0;
-    prototypeWarning();
+    printVersionInfo();
     std::unique_ptr<H5DataCache> dataCache(new H5DataCache);
     try {
         dataCache->filename = filename;
@@ -343,4 +343,5 @@ void plugin_close(int *error_flag){
 }
 
 } // extern "C"
+
 

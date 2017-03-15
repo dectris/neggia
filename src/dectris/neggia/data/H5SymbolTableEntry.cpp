@@ -134,23 +134,6 @@ H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
 
 }
 
-H5SymbolTableEntry H5SymbolTableEntry::findRecursively(const std::string &path) const
-{
-   assert (!path.empty());
-
-
-   H5SymbolTableEntry stEntry = (path[0] == '/')?
-            H5Superblock(this->fileAddress()).rootGroupSymbolTableEntry() :
-            *this;
-   std::stringstream ss(path);
-   std::string item;
-   while (std::getline(ss, item, '/')) {
-      // ignore double delim (e.g. '//') or delimiter at the beginning of s
-      if(!item.empty()) stEntry = stEntry.find(item);
-   }
-   return stEntry;
-}
-
 namespace {
 bool chunkCompareGreaterEqual(const uint64_t * key0, const uint64_t * key1, size_t len) {
    for(ssize_t idx = len-1; idx>=0; --idx) {
@@ -188,9 +171,7 @@ H5Object H5SymbolTableEntry::dataChunk(const std::vector<size_t> & offset) const
          }
 
          for(int i=0; i<bTree.entriesUsed(); ++i) {
-            //std::cout << "KEY " << std::dec << i << std::endl;
             H5Object key(bTree + 24 + i*(keySize + childSize));
-            //key.debugPrint(36);
             if(memcmp(key.address(8),offset.data(),offset.size()*sizeof(uint64_t)) == 0) {
                return key;
             }

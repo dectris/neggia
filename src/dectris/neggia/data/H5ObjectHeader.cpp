@@ -76,7 +76,6 @@ void H5ObjectHeader::_init()
 {
    assert(uint8(0) == 1);
    assert(uint8(1) == 0);
-   // std::cout<< std::dec << "HEADER SIZE: " << headerSize() << std::endl;
 
    constexpr uint64_t INVALID_SIZE = 0xffffffffffffffff;
 
@@ -88,8 +87,6 @@ void H5ObjectHeader::_init()
    };
    std::stack<ContBlock> continuationBlocks;
 
-   //uint64_t contBlockLocation = INVALID_SIZE;
-   //uint64_t contBlockSize = INVALID_SIZE;
    uint64_t currentBlockSize = headerSize();
    uint64_t currentMessageSize = 0;
    int messageId = 0;
@@ -98,23 +95,16 @@ void H5ObjectHeader::_init()
       H5Object messageObject(fileAddress(),messageOffset);
       uint16_t messageSize_ = messageObject.uint16(2);
       assert(messageSize_ == messageSize(messageId));
-      // std::cout << "MESSAGE TYPE: " << std::hex << "0x" << (int) messageType(messageId) << "   ";
-      // std::cout << "MESSAGE SIZE: " << std::dec << (int) messageSize(messageId) << "   ";
       assert(messageSize_%8 == 0);
       assert(messageObject.uint8(5) == 0);
       assert(messageObject.uint8(6) == 0);
       assert(messageObject.uint8(7) == 0);
-      // std::cout << "MESSAGE FLAGS: " << std::hex << "0x" << (int) messageFlags(messageId) << "   ";
       if(messageType(messageId) == 0x10) {
          uint64_t cbl = messageData(messageId).uint64(8);
          if(cbl != INVALID_SIZE) {
             continuationBlocks.push({cbl, messageData(messageId).uint64(16)});
-            //contBlockLocation =  cbl;
-            //contBlockSize = messageData(messageId).uint64(16);
          }
-         // std::cout << "CONT LOCATION: 0x" << std::hex << contBlockLocation << "   ";
       }
-      // std::cout << std::endl;
       assert(messageObject.uint16(0) == messageType(messageId));
       assert(messageObject.uint16(0) <= 0x18);
       if(++messageId < numberOfMessages()) {
@@ -122,22 +112,11 @@ void H5ObjectHeader::_init()
          currentMessageSize += size;
          assert(currentMessageSize <= currentBlockSize);
          if(currentMessageSize == currentBlockSize) {
-            // std::cout << "JUMPING TO 0x" << std::hex << contBlockLocation << std::endl;
             currentMessageSize = 0;
-
             assert(!continuationBlocks.empty());
             messageOffset = continuationBlocks.top().addr;
             currentBlockSize = continuationBlocks.top().size;
             continuationBlocks.pop();
-
-//            assert(contBlockLocation != INVALID_SIZE);
-//            messageOffset = contBlockLocation;
-//            contBlockLocation = INVALID_SIZE;
-//            assert(contBlockSize != INVALID_SIZE);
-//            currentBlockSize = contBlockSize;
-//            contBlockSize = INVALID_SIZE;
-
-
          } else {
             messageOffset += size;
          }
@@ -145,7 +124,5 @@ void H5ObjectHeader::_init()
          break;
       }
    }
-   // std::cout << std::dec << "SIZE OF ALL MESSAGES: " << offsetX-12 << std::endl;
-
 }
 

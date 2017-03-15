@@ -46,8 +46,6 @@ public:
     uint64_t getAddressOfHeap() const;
     uint32_t getOffsetToLinkValue() const;
     H5SymbolTableEntry find(const std::string & entry) const;
-    /// Does not follow links, use with care
-    H5SymbolTableEntry findRecursively(const std::string & entry) const;
     H5Object dataChunk(const std::vector<size_t> &offset) const;
 };
 
