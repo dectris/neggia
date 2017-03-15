@@ -1,0 +1,3 @@
+set(SOURCES "H5File.cpp" "Dataset.cpp")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_library(NEGGIA_USER OBJECT ${SOURCES})
