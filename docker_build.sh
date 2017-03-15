@@ -22,9 +22,11 @@
 
 #!/usr/bin/env bash
 
-
 SOURCE_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-docker build -t dectris-neggia-builder .
-docker run -t -v ${SOURCE_DIR}:/software_dir  dectris-neggia-builder \
-    /bin/bash -c "mkdir -p /software_dir/docker-build && cd /software_dir/docker-build && cmake3 .. && make -j4"
-cp docker-build/src/dectris/neggia/plugin/*.so .
+DOCKER_DIR=${SOURCE_DIR}
+BUILD_DIR=/tmp/neggia-docker-build
+mkdir -p ${BUILD_DIR}
+docker build -t dectris-neggia-builder ${DOCKER_DIR}
+docker run -t -v ${SOURCE_DIR}:/src  -v ${BUILD_DIR}:/build dectris-neggia-builder \
+    /bin/bash -c "cd /build && cmake3 /src && make -j4"
+cp ${BUILD_DIR}/src/dectris/neggia/plugin/*.so .
