@@ -1,3 +1,27 @@
+/**
+MIT License
+
+Copyright (c) 2017 DECTRIS Ltd.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #include "H5ToXds.h"
 #include <dectris/neggia/user/H5File.h>
 #include <dectris/neggia/user/Dataset.h>
@@ -178,7 +202,7 @@ void setNFramesPerDataset(H5DataCache* dataCache)
        dataCache->datasize = dataset.dataSize();
        assert(dataset.dataTypeId() == 0);
        assert(dataset.isChunked());
-       assert(dataset.chunkSize() == std::vector<size_t>({1,dataCache->dimy,dataCache->dimx}));
+       assert(dataset.chunkSize() == std::vector<size_t>({1,(unsigned int)dataCache->dimy,(unsigned int)dataCache->dimx}));
     } catch (const std::out_of_range &) {
         throw H5Error(-4, "ERROR: CANNOT OPEN /entry/data/data_000001 FROM ", dataCache->filename);
     }
@@ -209,7 +233,7 @@ void readDataset(int *frame_number, int data_array[], const H5DataCache* dataCac
     try {
         Dataset dataset(dataCache->h5File, pathToDataset);
         size_t totNumberOfDatasets = dataset.dim()[0];
-        int datasetFrameNumber = getFrameNumberWithinDataset(globalFrameNumber, dataCache);
+        size_t datasetFrameNumber = getFrameNumberWithinDataset(globalFrameNumber, dataCache);
         if(datasetFrameNumber >= totNumberOfDatasets) throw std::out_of_range("frame_number out of range");
         std::unique_ptr<char[]> buffer(new char[dataCache->dimx*dataCache->dimy*dataCache->datasize]);
         dataset.read(buffer.get(), std::vector<size_t>({datasetFrameNumber, 0, 0}));
