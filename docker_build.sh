@@ -28,5 +28,5 @@ BUILD_DIR=/tmp/neggia-docker-build
 mkdir -p ${BUILD_DIR}
 docker build -t dectris-neggia-builder ${DOCKER_DIR}
 docker run -t -v ${SOURCE_DIR}:/src  -v ${BUILD_DIR}:/build dectris-neggia-builder \
-    /bin/bash -c "cd /build && cmake3 /src && make -j4"
-cp ${BUILD_DIR}/src/dectris/neggia/plugin/*.so .
+    /bin/bash -c "cd /build && cmake3 /src && make -j4 && ctest3" && \
+    cp ${BUILD_DIR}/src/dectris/neggia/plugin/*.so .

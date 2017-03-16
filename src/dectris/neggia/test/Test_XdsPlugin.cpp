@@ -159,7 +159,6 @@ TEST_F(TestXdsPlugin, TestGetData) {
             ASSERT_EQ(dataArrayCompare[i], expectedArray[i]);
         }
     }
-
     close_file(&error_flag);
 }
 
