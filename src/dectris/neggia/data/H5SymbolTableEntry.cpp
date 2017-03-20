@@ -133,8 +133,9 @@ H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
 }
 
 namespace {
-bool chunkCompareGreaterEqual(const uint64_t * key0, const uint64_t * key1, size_t len) {
-   for(ssize_t idx = len-1; idx>=0; --idx) {
+template<class T1, class T2>
+bool chunkCompareGreaterEqual(const T1 * key0, const T2 * key1, size_t len) {
+   for(ssize_t idx = ((ssize_t)len) - 1; idx>=0; --idx) {
       if(key0[idx] < key1[idx]) return false;
       if(key0[idx] > key1[idx]) return true;
    }
