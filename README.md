@@ -6,22 +6,23 @@ XDS plugin that reads hdf5 files written by Dectris Eiger Detectors
 ## Build
 
 ### Prerequisites
-* gcc-4.8
-* On a centos6 machine install and enable devtoolset-2
-  * wget http://people.centos.org/tru/devtools-2/devtools-2.repo -O /etc/yum.repos.d/devtools-2.repo
-  * yum install -y devtoolset-2-gcc devtoolset-2-binutils devtoolset-2-gcc-c++
-  * scl enable devtoolset-2 bash
-* cmake 3.6
+* gcc-4.8 or higher
+* On a centos6 machine install and enable devtoolset
+  * yum -y install centos-release-scl-rh
+  * yum install -y devtoolset-6-gcc-c++
+  * scl enable devtoolset-6 bash
+* cmake 3.6 or later
+  * CentOS: yum install -y cmake3
+  * OSX: install binary from https://cmake.org
 * For running tests
   * DectrisHdf5 (https://github.com/dectris/DectrisHdf5.git)
   * Google Test (https://github.com/google/googletest.git)
 
 ### Building
+Use cmake or cmake3, depending on what your cmake version 3 executable is called.
 * mkdir build
 * cd build
 * cmake ..
 * make
 
-The plugin file is found in src/dectris/neggia/plugin/dectris-neggia.so
-
-
+The plugin file is found in build/src/dectris/neggia/plugin/dectris-neggia.so
