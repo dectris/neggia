@@ -32,7 +32,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 enable_testing()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(VERSION 1.0.0)
+set(VERSION 1.0.1)
 add_definitions(-DVERSION=\"${VERSION}\")
 
 add_subdirectory(src)

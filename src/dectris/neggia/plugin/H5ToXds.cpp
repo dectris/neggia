@@ -56,7 +56,7 @@ void printVersionInfo() {
 }
 
 template<class T> void applyMaskAndTransformToInt32(const T * indata, int outdata[], const uint32_t * maskData, size_t size) {
-    constexpr size_t maxSigned = (size_t)std::numeric_limits<int>::max();
+    constexpr size_t maxSigned = (size_t)std::numeric_limits<int32_t>::max();
     for(size_t j=0; j<size; ++j) {
         if(maskData[j] & 0x1) {
             outdata[j] = -1;
@@ -88,7 +88,7 @@ size_t readSizeTypeFromDataset(const Dataset &d) {
     case sizeof(uint64_t):
         return readFromDataset<uint64_t>(d);
     default:
-        throw H5Error(-4, "UNSUPPORTED DATATYPE");
+        throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE");
     }
 }
 
@@ -100,21 +100,21 @@ double readFloatFromDataset(const Dataset & d) {
     case sizeof(double):
         return readFromDataset<double>(d);
     default:
-        throw H5Error(-4, "UNSUPPORTED DATATYPE");
+        throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE");
     }
 }
 
 H5DataCache * getPreopenedDataCache () {
     H5DataCache * dataCache = GLOBAL_HANDLE.get();
     if (!dataCache) {
-       throw H5Error(-2, "ERROR: NO FILE HAS BEEN OPENED YET");
+       throw H5Error(-2, "NEGGIA ERROR: NO FILE HAS BEEN OPENED YET");
     }
     return dataCache;
 }
 
 size_t correctFrameNumberOffset(int frameNumberStartingFromOne) {
     if(frameNumberStartingFromOne < 1) {
-        throw H5Error(-2, "ERROR: Framenumbers start from 1");
+        throw H5Error(-2, "NEGGIA ERROR: Framenumbers start from 1");
     }
     return (size_t) frameNumberStartingFromOne - 1;
 }
@@ -164,7 +164,7 @@ void setPixelMask(H5DataCache* dataCache) {
        dataCache->pixelMask.reset(new uint32_t[s]);
        pixelMask.read(dataCache->pixelMask.get());
     } catch (const std::out_of_range &) {
-       throw H5Error(-4, "ERROR: CANNOT READ PIXEL MASK FROM ", dataCache->filename);
+       throw H5Error(-4, "NEGGIA ERROR: CANNOT READ PIXEL MASK FROM ", dataCache->filename);
     }
 }
 
@@ -173,9 +173,9 @@ size_t getNumberOfImages(const H5DataCache * dataCache) {
        Dataset d(dataCache->h5File, "/entry/instrument/detector/detectorSpecific/nimages");
        return readSizeTypeFromDataset(d);
     } catch (const std::out_of_range&) {
-       throw H5Error(-4, "ERROR: CANNOT READ N_IMAGES FROM ", dataCache->filename);
+       throw H5Error(-4, "NEGGIA ERROR: CANNOT READ N_IMAGES FROM ", dataCache->filename);
     } catch (const H5Error &) {
-        throw H5Error(-4, "ERROR: UNSUPPORTED DATATYPE FOR N_IMAGES");
+        throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE FOR N_IMAGES");
     }
 }
 
@@ -184,9 +184,9 @@ size_t getNumberOfTriggers(const H5DataCache * dataCache) {
        Dataset d(dataCache->h5File, "/entry/instrument/detector/detectorSpecific/ntrigger");
        return readSizeTypeFromDataset(d);
     } catch (const std::out_of_range&) {
-       throw H5Error(-4, "ERROR: CANNOT READ N_TRIGGER FROM ", dataCache->filename);
+       throw H5Error(-4, "NEGGIA ERROR: CANNOT READ N_TRIGGER FROM ", dataCache->filename);
     } catch (const H5Error &) {
-        throw H5Error(-4, "ERROR: UNSUPPORTED DATATYPE FOR N_TRIGGER");
+        throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE FOR N_TRIGGER");
     }
 }
 
@@ -204,7 +204,7 @@ void setNFramesPerDataset(H5DataCache* dataCache)
        assert(dataset.isChunked());
        assert(dataset.chunkSize() == std::vector<size_t>({1,(unsigned int)dataCache->dimy,(unsigned int)dataCache->dimx}));
     } catch (const std::out_of_range &) {
-        throw H5Error(-4, "ERROR: CANNOT OPEN /entry/data/data_000001 FROM ", dataCache->filename);
+        throw H5Error(-4, "NEGGIA ERROR: CANNOT OPEN /entry/data/data_000001 FROM ", dataCache->filename);
     }
 }
 
@@ -221,7 +221,7 @@ void applyMaskAndTransformToInt32(const H5DataCache* dataCache, const void * ind
         applyMaskAndTransformToInt32((const uint32_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy);
         break;
     default: {
-        throw H5Error(-3, "ERROR: DATATYPE NOT SUPPORTED");
+        throw H5Error(-3, "NEGGIA ERROR: DATATYPE NOT SUPPORTED");
     }
     }
 }
@@ -239,7 +239,7 @@ void readDataset(int *frame_number, int data_array[], const H5DataCache* dataCac
         dataset.read(buffer.get(), std::vector<size_t>({datasetFrameNumber, 0, 0}));
         applyMaskAndTransformToInt32(dataCache, buffer.get(), data_array);
     } catch(const std::out_of_range &) {
-        throw H5Error(-2, "ERROR: CANNOT OPEN FRAME ", *frame_number);
+        throw H5Error(-2, "NEGGIA ERROR: CANNOT OPEN FRAME ", *frame_number);
     }
 }
 
@@ -271,12 +271,12 @@ void plugin_open(const char * filename,
         dataCache->filename = filename;
         dataCache->h5File   = H5File(filename);
     } catch (const std::out_of_range &) {
-        std::cerr << "ERROR: CANNOT OPEN " << filename << std::endl;
+        std::cerr << "NEGGIA ERROR: CANNOT OPEN " << filename << std::endl;
         *error_flag = -4;
         return;
     }
     if(GLOBAL_HANDLE) {
-        std::cerr << "ERROR: CAN ONLY OPEN ONE FILE AT A TIME " << std::endl;
+        std::cerr << "NEGGIA ERROR: CAN ONLY OPEN ONE FILE AT A TIME " << std::endl;
         *error_flag = -4;
         return;
     } else {

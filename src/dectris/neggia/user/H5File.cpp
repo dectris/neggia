@@ -45,15 +45,15 @@ std::shared_ptr<char> mapFile(const std::string & fileName)
 {
     int fd = open(fileName.c_str(), O_RDONLY);
     if(fd < 0) {
-        std::cerr << "ERRNO: " << errno << std::endl;
-        throw std::out_of_range("Cannot map file");
+        std::cerr << "NEGGIA ERROR: OPENING FILE RETURNED ERROR CODE: " << errno << std::endl;
+        throw std::out_of_range("Cannot open file");
     }
     off_t fsize = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
     char * filePointer = (char*) mmap(NULL, fsize, PROT_READ, MAP_SHARED, fd, 0);
     if(filePointer == MAP_FAILED) {
         close(fd);
-        std::cerr << "ERRNO: " << errno << std::endl;
+        std::cerr << "NEGGIA ERROR: MAPPING FILE RETURNED ERROR CODE: " << errno << std::endl;
         throw std::out_of_range("Cannot map file");
     }
     close(fd);
