@@ -2,8 +2,7 @@ Neggia
 ===========
 
 XDS plugin that reads hdf5 files written by Dectris Eiger Detectors.
-Please obtain XDS from ftp://turn5.biologie.uni-konstanz.de/xds/2016-dec05/, which is the version that was released in December 2016.
-Other versions may not work.
+Please note that a recent version of XDS (Version June 1, 2017 or later) is required for this to work.
 
 ## Build
 
