@@ -28,6 +28,7 @@ SOFTWARE.
 #include <cmath>
 #include <assert.h>
 #include <iostream>
+#include <stdexcept>
 
 H5BTreeVersion2::H5BTreeVersion2()
 {
