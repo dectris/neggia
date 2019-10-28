@@ -55,8 +55,7 @@ void printVersionInfo() {
    std::cout << "This is neggia " << VERSION << " (Copyright Dectris 2017)" << std::endl;
 }
 
-template<class T> void applyMaskAndTransformToInt32(const T * indata, int outdata[], const uint32_t * maskData, size_t size) {
-    constexpr size_t maxSigned = (size_t)std::numeric_limits<int32_t>::max();
+template<class T> void applyMaskAndTransformToInt32(const T * indata, int outdata[], const uint32_t * maskData, size_t size, size_t maxSigned) {
     for(size_t j=0; j<size; ++j) {
         if(maskData[j] & 0x1) {
             outdata[j] = -1;
@@ -212,13 +211,16 @@ void applyMaskAndTransformToInt32(const H5DataCache* dataCache, const void * ind
 {
     switch(dataCache->datasize) {
     case 1:
-        applyMaskAndTransformToInt32((const uint8_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy);
+        constexpr size_t maxSigned8  = (size_t)std::numeric_limits<int8_t>::max();
+        applyMaskAndTransformToInt32((const uint8_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy, maxSigned8);
         break;
     case 2:
-        applyMaskAndTransformToInt32((const uint16_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy);
+        constexpr size_t maxSigned16 = (size_t)std::numeric_limits<int16_t>::max();
+        applyMaskAndTransformToInt32((const uint16_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy, maxSigned16);
         break;
     case 4:
-        applyMaskAndTransformToInt32((const uint32_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy);
+        constexpr size_t maxSigned32 = (size_t)std::numeric_limits<int32_t>::max();
+        applyMaskAndTransformToInt32((const uint32_t*)indata, outdata, dataCache->pixelMask.get(), dataCache->dimx*dataCache->dimy, maxSigned32);
         break;
     default: {
         throw H5Error(-3, "NEGGIA ERROR: DATATYPE NOT SUPPORTED");
