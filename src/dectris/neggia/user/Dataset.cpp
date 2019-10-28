@@ -39,7 +39,7 @@ SOFTWARE.
 #include <sstream>
 #include <assert.h>
 #include <string.h>
-
+#include <stdexcept>
 
 Dataset::Dataset():
     _filterId(-1),
