@@ -32,8 +32,10 @@ SOFTWARE.
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <stdlib.h>
 #include "H5Error.h"
 
+#define VERSION "1.0.1"
 
 namespace {
 
@@ -252,6 +254,14 @@ void setInfoArray(int info[1024])
     info[2] = DECTRIS_H5TOXDS_VERSION_MINOR;      // Version  [Minor]
     info[3] = DECTRIS_H5TOXDS_VERSION_PATCH;      // Version  [Patch]
     info[4] = DECTRIS_H5TOXDS_VERSION_TIMESTAMP;  // Version  [timestamp]
+    info[5] = 0; // image number offset
+
+    char *cenv;
+    cenv = getenv("NEGGIA_IMAGE_NUMBER_OFFSET");
+    if (cenv!=NULL) {
+      info[5] = atoi(cenv);
+    }
+
 }
 
 
@@ -330,7 +340,7 @@ void plugin_get_data(int *frame_number,
     setInfoArray(info_array);
     try {
         H5DataCache * dataCache = getPreopenedDataCache();
-        readDataset(frame_number, data_array, dataCache);
+        readDataset((frame_number - info_array[5]), data_array, dataCache);
     } catch (const H5Error & error) {
         std::cerr << error.what() << std::endl;
         *error_flag = error.getErrorCode();
