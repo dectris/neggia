@@ -32,6 +32,7 @@ SOFTWARE.
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <type_traits>
 #include "H5Error.h"
 
 
@@ -52,11 +53,11 @@ struct H5DataCache {
 std::unique_ptr<H5DataCache> GLOBAL_HANDLE = nullptr;
 
 void printVersionInfo() {
-   std::cout << "This is neggia " << VERSION << " (Copyright Dectris 2017)" << std::endl;
+   std::cout << "This is neggia " << VERSION << " (Copyright Dectris 2020)" << std::endl;
 }
 
 template<class T> void applyMaskAndTransformToInt32(const T * indata, int outdata[], const uint32_t * maskData, size_t size) {
-    constexpr size_t maxSigned = (size_t)std::numeric_limits<int32_t>::max();
+    constexpr size_t maxSigned = (size_t)std::numeric_limits<typename std::make_signed<T>::type>::max();
     for(size_t j=0; j<size; ++j) {
         if(maskData[j] & 0x1) {
             outdata[j] = -1;
