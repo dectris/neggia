@@ -123,7 +123,7 @@ void H5LinkMsg::_init()
 
    switch(_linkType) {
    case HARD: {
-      _hardLinkObjectHeader = H5Object(fileAddress(), uint64_t(linkInformationOffset));
+      _hardLinkObjectHeader = H5Object(fileAddress(), uint64(linkInformationOffset));
    } break;
    case SOFT: {
       size_t length = uint16(linkInformationOffset);
