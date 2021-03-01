@@ -71,6 +71,7 @@ H5Path::operator std::string() const
         for(size_t i=0; i<_path.size()-1; ++i) returnValue += _path[i] + "/";
         returnValue += _path[_path.size()-1];
     }
+    return returnValue;
 }
 
 std::vector<std::string> H5Path::splitPathStringIntoComponents(const std::string &path) const
