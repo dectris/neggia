@@ -22,19 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-
 #ifndef TESTH5DATASET_H
 #define TESTH5DATASET_H
 
+#include <cpp/H5Cpp.h>
+#include <gtest/gtest.h>
+#include <hdf5_hl.h>
 #include <string>
 #include <vector>
-#include <gtest/gtest.h>
-#include <cpp/H5Cpp.h>
-#include <hdf5_hl.h>
 
-
-class H5DatasetTestFixture: public ::testing::Test {
+class H5DatasetTestFixture : public ::testing::Test {
 public:
     H5DatasetTestFixture();
     virtual void SetUp();
@@ -54,9 +51,9 @@ public:
     constexpr static size_t N_FRAMES_PER_DATASET = 5;
     constexpr static double X_PIXEL_SIZE = 0.25;
     constexpr static double Y_PIXEL_SIZE = 0.5;
-    unsigned int pixelMaskData[WIDTH*HEIGHT];
+    unsigned int pixelMaskData[WIDTH * HEIGHT];
     using DATA_TYPE = uint16_t;
-    DATA_TYPE dataArray[HEIGHT*WIDTH];
+    DATA_TYPE dataArray[HEIGHT * WIDTH];
 
 private:
     const std::string testDir;
@@ -67,13 +64,14 @@ private:
     void setupData();
     void setupH5MasterFile(size_t numberOfDatasets);
     void setupH5DataFiles();
-    template<class T> void writeValue(H5::Group &, const std::string & identifier, const T & data);
-    void writePixelMask(H5::Group &);
-    void writeNumberOfImages(H5::Group &);
-    void writeNumberOfTriggers(H5::Group &);
-    void writeXPixelSize(H5::Group &g);
-    void writeYPixelSize(H5::Group &g);
-    void mkdirRecursively(const std::string & directory);
+    template <class T>
+    void writeValue(H5::Group&, const std::string& identifier, const T& data);
+    void writePixelMask(H5::Group&);
+    void writeNumberOfImages(H5::Group&);
+    void writeNumberOfTriggers(H5::Group&);
+    void writeXPixelSize(H5::Group& g);
+    void writeYPixelSize(H5::Group& g);
+    void mkdirRecursively(const std::string& directory);
 };
 
-#endif // TESTH5DATASET_H
+#endif  // TESTH5DATASET_H

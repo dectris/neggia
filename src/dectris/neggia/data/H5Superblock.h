@@ -29,15 +29,13 @@ SOFTWARE.
 
 /// See https://www.hdfgroup.org/HDF5/doc/H5.format.html#Superblock
 
-class H5Superblock : public H5Object
-{
+class H5Superblock : public H5Object {
 public:
-   H5Superblock() = default;
-   H5Superblock(const char * fileAddress);
-   int groupLeafNodeK() const;
-   int groupInternalNodeK() const;
-   H5SymbolTableEntry rootGroupSymbolTableEntry() const;
-
+    H5Superblock() = default;
+    H5Superblock(const char* fileAddress);
+    int groupLeafNodeK() const;
+    int groupInternalNodeK() const;
+    H5SymbolTableEntry rootGroupSymbolTableEntry() const;
 };
 
-#endif // H5SUPERBLOCK_H
+#endif  // H5SUPERBLOCK_H

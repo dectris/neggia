@@ -27,4 +27,4 @@ SOFTWARE.
 
 #define H5_INVALID_ADDRESS 0xffffffffffffffff
 
-#endif // CONSTANTS_H
+#endif  // CONSTANTS_H

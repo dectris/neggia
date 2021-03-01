@@ -1,0 +1,10 @@
+BasedOnStyle: Chromium
+AccessModifierOffset: -4
+BraceWrapping:
+  AfterControlStatement: MultiLine
+BreakBeforeBraces: Custom
+ColumnLimit: 80
+ConstructorInitializerIndentWidth: 6
+ContinuationIndentWidth: 8
+IndentWidth: 4
+Standard: Cpp11
