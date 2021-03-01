@@ -36,15 +36,16 @@ public:
    H5ObjectHeader(const char * fileAddress, size_t offset);
    H5ObjectHeader(const H5Object & other);
    uint16_t numberOfMessages() const;
+   H5HeaderMessage headerMessage(int i) const;
+private:
+   std::vector<uint64_t> _messageOffset;
+   void _init();
+
    uint32_t referenceCount() const;
    uint32_t headerSize() const;
    uint16_t messageType(int i) const;
    uint16_t messageSize(int i) const;
    uint8_t messageFlags(int i) const;
-   H5HeaderMsgPreamble messageData(int i) const;
-private:
-   std::vector<uint64_t> _messageOffset;
-   void _init();
 };
 
 #endif // H5OBJECTHEADER_H

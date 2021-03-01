@@ -67,9 +67,9 @@ uint8_t H5ObjectHeader::messageFlags(int i) const
    return *(const uint8_t*)(fileAddress() + _messageOffset[i]+4);
 }
 
-H5HeaderMsgPreamble H5ObjectHeader::messageData(int i) const
+H5HeaderMessage H5ObjectHeader::headerMessage(int i) const
 {
-   return H5HeaderMsgPreamble(fileAddress(),_messageOffset[i]);
+   return H5HeaderMessage{H5Object(fileAddress(), _messageOffset[i] + 8), messageType(i)};
 }
 
 void H5ObjectHeader::_init()
@@ -100,9 +100,10 @@ void H5ObjectHeader::_init()
       assert(messageObject.read_u8(6) == 0);
       assert(messageObject.read_u8(7) == 0);
       if(messageType(messageId) == 0x10) {
-         uint64_t cbl = messageData(messageId).read_u64(8);
+         auto contMsg = headerMessage(messageId).object;
+         uint64_t cbl = contMsg.read_u64(0);
          if(cbl != INVALID_SIZE) {
-            continuationBlocks.push({cbl, messageData(messageId).read_u64(16)});
+            continuationBlocks.push({cbl, contMsg.read_u64(8)});
          }
       }
       assert(messageObject.read_u16(0) == messageType(messageId));

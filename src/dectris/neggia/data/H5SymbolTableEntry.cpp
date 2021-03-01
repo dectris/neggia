@@ -151,9 +151,9 @@ H5Object H5SymbolTableEntry::dataChunk(const std::vector<size_t> & offset) const
 
    H5ObjectHeader objHeader(this->objectHeader());
    for(int i=0; i<objHeader.numberOfMessages(); ++i) {
-      H5HeaderMsgPreamble msg(objHeader.messageData(i));
-      if(msg.type() == H5DataLayoutMsg::TYPE_ID) {
-         H5DataLayoutMsg dataLayoutMsg(msg.getHeaderMsg());
+      H5HeaderMessage msg(objHeader.headerMessage(i));
+      if(msg.type == H5DataLayoutMsg::TYPE_ID) {
+         H5DataLayoutMsg dataLayoutMsg(msg.object);
          H5BLinkNode bTree(dataLayoutMsg.chunkBTree());
 
          while(bTree.nodeLevel() > 0) {

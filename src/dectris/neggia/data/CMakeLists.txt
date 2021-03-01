@@ -27,7 +27,6 @@ set(SOURCES
         H5DataspaceMsg.cpp
         H5FilterMsg.cpp
         H5FractalHeap.cpp
-        H5HeaderMsg.cpp
         H5LinkInfoMessage.cpp
         H5LinkMsg.cpp
         H5Object.cpp
