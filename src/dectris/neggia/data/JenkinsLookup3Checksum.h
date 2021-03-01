@@ -42,6 +42,6 @@ SOFTWARE.
 #include <stdint.h>
 #include <string>
 
-uint32_t JenkinsLookup3Checksum(const std::string & str);
+uint32_t JenkinsLookup3Checksum(const std::string& str);
 
-#endif // JENKINSLOOKUP3CHECKSUM_H
+#endif  // JENKINSLOOKUP3CHECKSUM_H

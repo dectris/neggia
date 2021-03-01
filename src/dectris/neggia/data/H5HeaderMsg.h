@@ -35,4 +35,4 @@ struct H5HeaderMessage {
     uint16_t type;
 };
 
-#endif // H5HEADERMESSAGE_H
+#endif  // H5HEADERMESSAGE_H

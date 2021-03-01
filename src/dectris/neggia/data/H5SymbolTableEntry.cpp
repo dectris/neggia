@@ -22,162 +22,156 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-#include "H5Superblock.h"
 #include "H5SymbolTableEntry.h"
-#include "H5SymbolTableNode.h"
-#include "H5DataLayoutMsg.h"
-#include "H5BLinkNode.h"
-#include "H5LocalHeap.h"
+#include <string.h>
 #include <algorithm>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
-#include <string.h>
+#include <stdexcept>
+#include "H5BLinkNode.h"
+#include "H5DataLayoutMsg.h"
+#include "H5LocalHeap.h"
+#include "H5Superblock.h"
+#include "H5SymbolTableNode.h"
 #include "assert.h"
 
+H5SymbolTableEntry::H5SymbolTableEntry(const char* fileAddress, size_t offset)
+      : H5Object(fileAddress, offset) {}
 
-H5SymbolTableEntry::H5SymbolTableEntry(const char *fileAddress, size_t offset):
-   H5Object(fileAddress,offset)
-{}
+H5SymbolTableEntry::H5SymbolTableEntry(const H5Object& other)
+      : H5Object(other) {}
 
-H5SymbolTableEntry::H5SymbolTableEntry(const H5Object &other):
-   H5Object(other)
-{
+size_t H5SymbolTableEntry::linkNameOffset() const {
+    return read_u64(0);
 }
 
-size_t H5SymbolTableEntry::linkNameOffset() const
-{
-   return read_u64(0);
+H5ObjectHeader H5SymbolTableEntry::objectHeader() const {
+    size_t offset = read_u64(8);
+    return H5ObjectHeader(fileAddress(), offset);
 }
 
-H5ObjectHeader H5SymbolTableEntry::objectHeader() const
-{
-   size_t offset = read_u64(8);
-   return H5ObjectHeader(fileAddress(), offset);
+H5SymbolTableEntry::CACHE_TYPE H5SymbolTableEntry::cacheType() const {
+    return (CACHE_TYPE)(read_u16(16));
 }
 
-H5SymbolTableEntry::CACHE_TYPE H5SymbolTableEntry::cacheType() const
-{
-   return (CACHE_TYPE)(read_u16(16));
-}
-
-
-H5Object H5SymbolTableEntry::scratchSpace() const
-{
+H5Object H5SymbolTableEntry::scratchSpace() const {
     return at(24);
 }
 
-uint64_t H5SymbolTableEntry::getAddressOfBTree() const
-{
+uint64_t H5SymbolTableEntry::getAddressOfBTree() const {
     assert(cacheType() == GROUP);
     return scratchSpace().read_u64(0);
 }
 
-uint64_t H5SymbolTableEntry::getAddressOfHeap() const
-{
+uint64_t H5SymbolTableEntry::getAddressOfHeap() const {
     assert(cacheType() == GROUP);
     return scratchSpace().read_u64(8);
 }
 
-uint32_t H5SymbolTableEntry::getOffsetToLinkValue() const
-{
+uint32_t H5SymbolTableEntry::getOffsetToLinkValue() const {
     assert(cacheType() == LINK);
     return scratchSpace().read_u32(0);
 }
 
-H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
-{
-   assert(cacheType() == 1); // makes sense only for groups
+H5SymbolTableEntry H5SymbolTableEntry::find(const std::string& entry) const {
+    assert(cacheType() == 1);  // makes sense only for groups
 
+    H5BLinkNode bTree(fileAddress(), scratchSpace().read_i64(0));
+    assert(bTree.nodeType() == 0);
+    H5LocalHeap treeHeap(fileAddress(), scratchSpace().read_i64(8));
+    while (bTree.nodeLevel() > 0) {
+        bool found = false;
+        for (int i = 1; i <= bTree.entriesUsed(); ++i) {
+            size_t off = bTree.key(i).read_u64(0);
+            std::string key = std::string(treeHeap.data(off));
+            if (entry <= key) {
+                bTree = bTree.child(i - 1);
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            throw std::runtime_error("Not found");
+    }
 
-   H5BLinkNode bTree(fileAddress(),scratchSpace().read_i64(0));
-   assert(bTree.nodeType() == 0);
-   H5LocalHeap treeHeap(fileAddress(),scratchSpace().read_i64(8));
-   while(bTree.nodeLevel() > 0) {
-      bool found = false;
-      for(int i=1; i<=bTree.entriesUsed(); ++i) {
-         size_t off = bTree.key(i).read_u64(0);
-         std::string key = std::string(treeHeap.data(off));
-         if(entry <= key) {
-            bTree = bTree.child(i-1);
-            found = true;
-            break;
-         }
-      }
-      if(!found) throw std::runtime_error("Not found");
-   }
-
-   {
-      int i;
-      for(i=1; i<=bTree.entriesUsed(); ++i) {
-         size_t off = bTree.key(i).read_u64(0);
-         std::string key = std::string(treeHeap.data(off));
-         if(entry <= key) {
-            break;
-         }
-      }
-      if(i > bTree.entriesUsed()) throw std::out_of_range("Not found");
-      H5SymbolTableNode symbolTableNode(bTree.child(i-1));
-      for(i=0; i<symbolTableNode.numberOfSymbols();++i) {
-         H5SymbolTableEntry retVal(symbolTableNode.entry(i));
-         size_t off = retVal.linkNameOffset();
-         std::string key = std::string(treeHeap.data(off));
-         if(key == entry) {
-            return retVal;
-         }
-      }
-      throw std::out_of_range("Not found");
-   }
-
+    {
+        int i;
+        for (i = 1; i <= bTree.entriesUsed(); ++i) {
+            size_t off = bTree.key(i).read_u64(0);
+            std::string key = std::string(treeHeap.data(off));
+            if (entry <= key) {
+                break;
+            }
+        }
+        if (i > bTree.entriesUsed())
+            throw std::out_of_range("Not found");
+        H5SymbolTableNode symbolTableNode(bTree.child(i - 1));
+        for (i = 0; i < symbolTableNode.numberOfSymbols(); ++i) {
+            H5SymbolTableEntry retVal(symbolTableNode.entry(i));
+            size_t off = retVal.linkNameOffset();
+            std::string key = std::string(treeHeap.data(off));
+            if (key == entry) {
+                return retVal;
+            }
+        }
+        throw std::out_of_range("Not found");
+    }
 }
 
 namespace {
-template<class T1, class T2>
-bool chunkCompareGreaterEqual(const T1 * key0, const T2 * key1, size_t len) {
-   for(ssize_t idx = ((ssize_t)len) - 1; idx>=0; --idx) {
-      if(key0[idx] < key1[idx]) return false;
-      if(key0[idx] > key1[idx]) return true;
-   }
-   return true;
+template <class T1, class T2>
+bool chunkCompareGreaterEqual(const T1* key0, const T2* key1, size_t len) {
+    for (ssize_t idx = ((ssize_t)len) - 1; idx >= 0; --idx) {
+        if (key0[idx] < key1[idx])
+            return false;
+        if (key0[idx] > key1[idx])
+            return true;
+    }
+    return true;
 }
-}
+}  // namespace
 
-H5Object H5SymbolTableEntry::dataChunk(const std::vector<size_t> & offset) const
-{
-   assert(cacheType() == 0); // makes sense only for datasets
-   const size_t keySize = 8+offset.size()*8;
-   const size_t childSize = 8;
+H5Object H5SymbolTableEntry::dataChunk(
+        const std::vector<size_t>& offset) const {
+    assert(cacheType() == 0);  // makes sense only for datasets
+    const size_t keySize = 8 + offset.size() * 8;
+    const size_t childSize = 8;
 
-   H5ObjectHeader objHeader(this->objectHeader());
-   for(int i=0; i<objHeader.numberOfMessages(); ++i) {
-      H5HeaderMessage msg(objHeader.headerMessage(i));
-      if(msg.type == H5DataLayoutMsg::TYPE_ID) {
-         H5DataLayoutMsg dataLayoutMsg(msg.object);
-         H5BLinkNode bTree(dataLayoutMsg.chunkBTree());
+    H5ObjectHeader objHeader(this->objectHeader());
+    for (int i = 0; i < objHeader.numberOfMessages(); ++i) {
+        H5HeaderMessage msg(objHeader.headerMessage(i));
+        if (msg.type == H5DataLayoutMsg::TYPE_ID) {
+            H5DataLayoutMsg dataLayoutMsg(msg.object);
+            H5BLinkNode bTree(dataLayoutMsg.chunkBTree());
 
-         while(bTree.nodeLevel() > 0) {
-            bool found = false;
-            for(int i=bTree.entriesUsed()-1; i>=0; --i) {
-               H5Object key(bTree + 24 + i*(keySize + childSize));
-               if(chunkCompareGreaterEqual(offset.data(),(const uint64_t* )key.address(8),offset.size())) {
-                  bTree = H5BLinkNode(key.fileAddress(),key.read_u64(keySize));
-                  found = true;
-                  break;
-               }
+            while (bTree.nodeLevel() > 0) {
+                bool found = false;
+                for (int i = bTree.entriesUsed() - 1; i >= 0; --i) {
+                    H5Object key(bTree + 24 + i * (keySize + childSize));
+                    if (chunkCompareGreaterEqual(
+                                offset.data(), (const uint64_t*)key.address(8),
+                                offset.size()))
+                    {
+                        bTree = H5BLinkNode(key.fileAddress(),
+                                            key.read_u64(keySize));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    throw std::runtime_error("Not found");
             }
-            if(!found) throw std::runtime_error("Not found");
-         }
 
-         for(int i=0; i<bTree.entriesUsed(); ++i) {
-            H5Object key(bTree + 24 + i*(keySize + childSize));
-            if(memcmp(key.address(8),offset.data(),offset.size()*sizeof(uint64_t)) == 0) {
-               return key;
+            for (int i = 0; i < bTree.entriesUsed(); ++i) {
+                H5Object key(bTree + 24 + i * (keySize + childSize));
+                if (memcmp(key.address(8), offset.data(),
+                           offset.size() * sizeof(uint64_t)) == 0)
+                {
+                    return key;
+                }
             }
-         }
-         throw std::runtime_error("Not found");
-      }
-   }
-   throw std::runtime_error("Missing H5DataCache Layout");
+            throw std::runtime_error("Not found");
+        }
+    }
+    throw std::runtime_error("Missing H5DataCache Layout");
 }
-
