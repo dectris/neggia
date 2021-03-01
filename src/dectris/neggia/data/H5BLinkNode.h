@@ -38,19 +38,19 @@ public:
    H5BLinkNode(const char * fileAddress, size_t offset);
    H5BLinkNode(const H5Object & other);
    int nodeType() const {
-      return uint8(4);
+      return read_u8(4);
    }
    int nodeLevel() const {
-      return uint8(5);
+      return read_u8(5);
    }
    int entriesUsed() const {
-      return uint16(6);
+      return read_u16(6);
    }
    H5BLinkNode leftSilbling() const {
-      return H5BLinkNode(fileAddress(), uint64(8));
+      return H5BLinkNode(fileAddress(), read_u64(8));
    }
    H5BLinkNode rightSilbling() const {
-       return H5BLinkNode(fileAddress(), uint64(16));
+       return H5BLinkNode(fileAddress(), read_u64(16));
    }
    H5Object key(int i) const {
       // offset relative to local heap
@@ -60,7 +60,7 @@ public:
    H5Object child(int i) const {
       // address of the child
       assert(nodeType() == 0);
-      return H5Object(fileAddress(),uint64(32 + i*16));
+      return H5Object(fileAddress(),read_u64(32 + i*16));
    }
 
 

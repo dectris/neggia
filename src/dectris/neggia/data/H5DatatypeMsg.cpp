@@ -38,22 +38,22 @@ H5DatatypeMsg::H5DatatypeMsg(const H5Object & obj): H5Object(obj)
 
 unsigned int H5DatatypeMsg::version() const
 {
-   return (this->uint8(0) & 0xf0) >> 4;
+   return (this->read_u8(0) & 0xf0) >> 4;
 }
 
 unsigned int H5DatatypeMsg::typeId() const
 {
-   return this->uint8(0) & 0x0f;
+   return this->read_u8(0) & 0x0f;
 }
 
 unsigned int H5DatatypeMsg::dataSize() const
 {
-   return this->uint32(4);
+   return this->read_u32(4);
 }
 
 bool H5DatatypeMsg::isSigned() const
 {
-   if(typeId() == 0) return this->uint8(1) & 0x8;
+   if(typeId() == 0) return this->read_u8(1) & 0x8;
    else if (typeId() == 1) return true;
 }
 

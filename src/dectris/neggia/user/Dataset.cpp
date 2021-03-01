@@ -129,8 +129,8 @@ Dataset::ConstDataPointer Dataset::getRawData(const std::vector<size_t> &chunkOf
         std::vector<size_t> chunkOffsetFullSize(chunkOffset);
         while(chunkOffsetFullSize.size() < _chunkSize.size() + 1) chunkOffsetFullSize.push_back(0);
         H5Object dataChunk(_dataSymbolTable.dataChunk(chunkOffsetFullSize));
-        rawData = dataChunk.fileAddress() + dataChunk.uint64(8+chunkOffsetFullSize.size()*8);
-        rawDataSize = dataChunk.uint32(0);
+        rawData = dataChunk.fileAddress() + dataChunk.read_u64(8+chunkOffsetFullSize.size()*8);
+        rawDataSize = dataChunk.read_u32(0);
     } else {
         rawData = _dataLayoutMsg.dataAddress();
         rawDataSize = _dataLayoutMsg.dataSize();
@@ -219,24 +219,24 @@ uint32_t Dataset::getFractalHeapOffset(const H5LinkInfoMsg & linkInfoMsg, const 
     }
     H5BTreeVersion2 btree(_h5File.fileAddress(), btreeAddress);
     H5Object heapRecord(_h5File.fileAddress(), btree.getRecordAddress(pathItem));
-    return heapRecord.uint32(5);
+    return heapRecord.read_u32(5);
 }
 
 void Dataset::findPathInObjectHeader(const H5SymbolTableEntry & parentEntry, const std::string pathItem, const H5Path &remainingPath)
 {
     H5ObjectHeader objectHeader = parentEntry.objectHeader();
     for(size_t i=0; i< objectHeader.numberOfMessages(); ++i) {
-        H5HeaderMsgPreamble msg(objectHeader.messageData(i));
-        switch(msg.type()) {
+        H5HeaderMessage msg(objectHeader.headerMessage(i));
+        switch(msg.type) {
         case H5LinkMsg::TYPE_ID: {
-            H5LinkMsg linkMsg(msg.getHeaderMsg());
+            H5LinkMsg linkMsg(msg.object);
             if(linkMsg.linkName() != pathItem) continue;
             findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
             return;
         } break;
         case H5LinkInfoMsg::TYPE_ID: {
             uint32_t heapOffset;
-            H5LinkInfoMsg linkInfoMsg(msg.getHeaderMsg());
+            H5LinkInfoMsg linkInfoMsg(msg.object);
             try {
                 heapOffset = getFractalHeapOffset(linkInfoMsg, pathItem);
             } catch(const std::out_of_range&) {
@@ -260,11 +260,11 @@ void Dataset::parseDataSymbolTable()
 {
     H5ObjectHeader dataObjectHeader = _dataSymbolTable.objectHeader();
     for(int i=0; i<dataObjectHeader.numberOfMessages(); ++i) {
-        H5HeaderMsgPreamble headerMsg(dataObjectHeader.messageData(i));
-        switch(headerMsg.type())
+        H5HeaderMessage msg(dataObjectHeader.headerMessage(i));
+        switch(msg.type)
         {
         case H5DataspaceMsg::TYPE_ID: {
-            H5DataspaceMsg dataspaceMsg(headerMsg.getHeaderMsg());
+            H5DataspaceMsg dataspaceMsg(msg.object);
             _dim.clear();
             for(size_t i=0; i<dataspaceMsg.rank(); ++i) {
                 _dim.push_back(dataspaceMsg.dim(i));
@@ -272,7 +272,7 @@ void Dataset::parseDataSymbolTable()
             break;
         }
         case H5DataLayoutMsg::TYPE_ID: {
-            _dataLayoutMsg = H5DataLayoutMsg(headerMsg.getHeaderMsg());
+            _dataLayoutMsg = H5DataLayoutMsg(msg.object);
             switch(_dataLayoutMsg.layoutClass()) {
             case 0:
             case 1:
@@ -291,7 +291,7 @@ void Dataset::parseDataSymbolTable()
             break;
         }
         case H5FilterMsg::TYPE_ID: {
-            H5FilterMsg filterMsg(headerMsg.getHeaderMsg());
+            H5FilterMsg filterMsg(msg.object);
             // We accept at most on filter
             assert(filterMsg.nFilters() <= 1);
             if(filterMsg.nFilters() == 1) _filterId = filterMsg.filterId(0);
@@ -299,7 +299,7 @@ void Dataset::parseDataSymbolTable()
             break;
         }
         case H5DatatypeMsg::TYPE_ID: {
-            H5DatatypeMsg datatypeMsg(headerMsg.getHeaderMsg());
+            H5DatatypeMsg datatypeMsg(msg.object);
             _dataSize = datatypeMsg.dataSize();
             _dataTypeId = datatypeMsg.typeId();
             _isSigned = datatypeMsg.isSigned();
