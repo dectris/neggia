@@ -39,7 +39,7 @@ H5SymbolTableNode::H5SymbolTableNode(const H5Object &other):
 
 int H5SymbolTableNode::numberOfSymbols() const
 {
-   return uint16(6);
+   return read_u16(6);
 }
 
 H5SymbolTableEntry H5SymbolTableNode::entry(int i) const

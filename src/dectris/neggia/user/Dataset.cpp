@@ -129,8 +129,8 @@ Dataset::ConstDataPointer Dataset::getRawData(const std::vector<size_t> &chunkOf
         std::vector<size_t> chunkOffsetFullSize(chunkOffset);
         while(chunkOffsetFullSize.size() < _chunkSize.size() + 1) chunkOffsetFullSize.push_back(0);
         H5Object dataChunk(_dataSymbolTable.dataChunk(chunkOffsetFullSize));
-        rawData = dataChunk.fileAddress() + dataChunk.uint64(8+chunkOffsetFullSize.size()*8);
-        rawDataSize = dataChunk.uint32(0);
+        rawData = dataChunk.fileAddress() + dataChunk.read_u64(8+chunkOffsetFullSize.size()*8);
+        rawDataSize = dataChunk.read_u32(0);
     } else {
         rawData = _dataLayoutMsg.dataAddress();
         rawDataSize = _dataLayoutMsg.dataSize();
@@ -219,7 +219,7 @@ uint32_t Dataset::getFractalHeapOffset(const H5LinkInfoMsg & linkInfoMsg, const 
     }
     H5BTreeVersion2 btree(_h5File.fileAddress(), btreeAddress);
     H5Object heapRecord(_h5File.fileAddress(), btree.getRecordAddress(pathItem));
-    return heapRecord.uint32(5);
+    return heapRecord.read_u32(5);
 }
 
 void Dataset::findPathInObjectHeader(const H5SymbolTableEntry & parentEntry, const std::string pathItem, const H5Path &remainingPath)

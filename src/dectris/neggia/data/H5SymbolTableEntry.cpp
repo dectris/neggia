@@ -48,18 +48,18 @@ H5SymbolTableEntry::H5SymbolTableEntry(const H5Object &other):
 
 size_t H5SymbolTableEntry::linkNameOffset() const
 {
-   return uint64(0);
+   return read_u64(0);
 }
 
 H5ObjectHeader H5SymbolTableEntry::objectHeader() const
 {
-   size_t offset = uint64(8);
+   size_t offset = read_u64(8);
    return H5ObjectHeader(fileAddress(), offset);
 }
 
 H5SymbolTableEntry::CACHE_TYPE H5SymbolTableEntry::cacheType() const
 {
-   return (CACHE_TYPE)(uint16(16));
+   return (CACHE_TYPE)(read_u16(16));
 }
 
 
@@ -71,19 +71,19 @@ H5Object H5SymbolTableEntry::scratchSpace() const
 uint64_t H5SymbolTableEntry::getAddressOfBTree() const
 {
     assert(cacheType() == GROUP);
-    return scratchSpace().uint64(0);
+    return scratchSpace().read_u64(0);
 }
 
 uint64_t H5SymbolTableEntry::getAddressOfHeap() const
 {
     assert(cacheType() == GROUP);
-    return scratchSpace().uint64(8);
+    return scratchSpace().read_u64(8);
 }
 
 uint32_t H5SymbolTableEntry::getOffsetToLinkValue() const
 {
     assert(cacheType() == LINK);
-    return scratchSpace().uint32(0);
+    return scratchSpace().read_u32(0);
 }
 
 H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
@@ -91,13 +91,13 @@ H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
    assert(cacheType() == 1); // makes sense only for groups
 
 
-   H5BLinkNode bTree(fileAddress(),scratchSpace().int64(0));
+   H5BLinkNode bTree(fileAddress(),scratchSpace().read_i64(0));
    assert(bTree.nodeType() == 0);
-   H5LocalHeap treeHeap(fileAddress(),scratchSpace().int64(8));
+   H5LocalHeap treeHeap(fileAddress(),scratchSpace().read_i64(8));
    while(bTree.nodeLevel() > 0) {
       bool found = false;
       for(int i=1; i<=bTree.entriesUsed(); ++i) {
-         size_t off = bTree.key(i).uint64(0);
+         size_t off = bTree.key(i).read_u64(0);
          std::string key = std::string(treeHeap.data(off));
          if(entry <= key) {
             bTree = bTree.child(i-1);
@@ -111,7 +111,7 @@ H5SymbolTableEntry H5SymbolTableEntry::find(const std::string &entry) const
    {
       int i;
       for(i=1; i<=bTree.entriesUsed(); ++i) {
-         size_t off = bTree.key(i).uint64(0);
+         size_t off = bTree.key(i).read_u64(0);
          std::string key = std::string(treeHeap.data(off));
          if(entry <= key) {
             break;
@@ -161,7 +161,7 @@ H5Object H5SymbolTableEntry::dataChunk(const std::vector<size_t> & offset) const
             for(int i=bTree.entriesUsed()-1; i>=0; --i) {
                H5Object key(bTree + 24 + i*(keySize + childSize));
                if(chunkCompareGreaterEqual(offset.data(),(const uint64_t* )key.address(8),offset.size())) {
-                  bTree = H5BLinkNode(key.fileAddress(),key.uint64(keySize));
+                  bTree = H5BLinkNode(key.fileAddress(),key.read_u64(keySize));
                   found = true;
                   break;
                }

@@ -44,7 +44,7 @@ H5FractalHeap::H5FractalHeap(const H5Object & obj):
 
 size_t H5FractalHeap::getBlockOffsetSize() const
 {
-    uint16_t maximumHeapSize = this->uint16(128);
+    uint16_t maximumHeapSize = this->read_u16(128);
     size_t blockOffsetSize = maximumHeapSize/8;
     if(maximumHeapSize%8 > 0) blockOffsetSize += 1;
     return blockOffsetSize;
@@ -52,7 +52,7 @@ size_t H5FractalHeap::getBlockOffsetSize() const
 
 uint64_t H5FractalHeap::getFiltersEncodedLength() const
 {
-    return this->uint16(7);
+    return this->read_u16(7);
 }
 
 bool H5FractalHeap::filtersArePresent() const
@@ -62,13 +62,13 @@ bool H5FractalHeap::filtersArePresent() const
 
 bool H5FractalHeap::blocksAreChecksummed() const
 {
-    uint8_t flags = this->uint8(9);
+    uint8_t flags = this->read_u8(9);
     return (bool)(flags & 0x02);
 }
 
 uint16_t H5FractalHeap::getTableWidth() const
 {
-    return this->uint16(110);
+    return this->read_u16(110);
 }
 
 size_t H5FractalHeap::getMaximumNumberOfDirectBlocks() const
@@ -78,12 +78,12 @@ size_t H5FractalHeap::getMaximumNumberOfDirectBlocks() const
 
 size_t H5FractalHeap::getStartingBlockSize() const
 {
-    return this->uint64(112);
+    return this->read_u64(112);
 }
 
 size_t H5FractalHeap::getMaximumDirectBlockSize() const
 {
-    return this->uint64(120);
+    return this->read_u64(120);
 }
 
 size_t H5FractalHeap::getRow(size_t offset) const
@@ -136,20 +136,20 @@ H5Object H5FractalHeap::getHeapObjectInIndirectBlock(const H5Object &indirectBlo
     size_t maximumNumberOfDirectBlocks = getMaximumNumberOfDirectBlocks();
     if(blockNumber < maximumNumberOfDirectBlocks) {
         size_t blockOffset = 13 + getBlockOffsetSize() + blockNumber*(8+16*filtersArePresent());
-        return getHeapObjectInDirectBlock(H5Object(fileAddress(), indirectBlock.uint64(blockOffset)), heapOffset - columnOffset);
+        return getHeapObjectInDirectBlock(H5Object(fileAddress(), indirectBlock.read_u64(blockOffset)), heapOffset - columnOffset);
     } else {
        size_t blockOffset = 13 + getBlockOffsetSize() +
                maximumNumberOfDirectBlocks*(8+16*filtersArePresent()) +
                8*(blockNumber-maximumNumberOfDirectBlocks);
-       return getHeapObjectInIndirectBlock(H5Object(fileAddress(), indirectBlock.uint64(blockOffset)), heapOffset - columnOffset);
+       return getHeapObjectInIndirectBlock(H5Object(fileAddress(), indirectBlock.read_u64(blockOffset)), heapOffset - columnOffset);
     }
 }
 
 H5Object H5FractalHeap::getHeapObject(size_t offset) const
 {
-    size_t rootBlockAddress = this->int64(132);
+    size_t rootBlockAddress = this->read_i64(132);
     H5Object rootBlock(this->fileAddress(), rootBlockAddress);
-    uint16_t currentNRowsInRootIndirectBlock = this->uint16(140);
+    uint16_t currentNRowsInRootIndirectBlock = this->read_u16(140);
     if(currentNRowsInRootIndirectBlock == 0) { // root block is direct block
         return getHeapObjectInDirectBlock(rootBlock, offset);
     } else { // root block is indirect block

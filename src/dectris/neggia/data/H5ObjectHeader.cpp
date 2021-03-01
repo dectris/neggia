@@ -39,17 +39,17 @@ H5ObjectHeader::H5ObjectHeader(const H5Object &other): H5Object(other)
 
 uint16_t H5ObjectHeader::numberOfMessages() const
 {
-   return uint16(2);
+   return read_u16(2);
 }
 
 uint32_t H5ObjectHeader::referenceCount() const
 {
-   return uint32(4);
+   return read_u32(4);
 }
 
 uint32_t H5ObjectHeader::headerSize() const
 {
-   return uint32(8);
+   return read_u32(8);
 }
 
 uint16_t H5ObjectHeader::messageType(int i) const
@@ -74,8 +74,8 @@ H5HeaderMsgPreamble H5ObjectHeader::messageData(int i) const
 
 void H5ObjectHeader::_init()
 {
-   assert(uint8(0) == 1);
-   assert(uint8(1) == 0);
+   assert(read_u8(0) == 1);
+   assert(read_u8(1) == 0);
 
    constexpr uint64_t INVALID_SIZE = 0xffffffffffffffff;
 
@@ -93,20 +93,20 @@ void H5ObjectHeader::_init()
    while(true) {
       _messageOffset.push_back(messageOffset);
       H5Object messageObject(fileAddress(),messageOffset);
-      uint16_t messageSize_ = messageObject.uint16(2);
+      uint16_t messageSize_ = messageObject.read_u16(2);
       assert(messageSize_ == messageSize(messageId));
       assert(messageSize_%8 == 0);
-      assert(messageObject.uint8(5) == 0);
-      assert(messageObject.uint8(6) == 0);
-      assert(messageObject.uint8(7) == 0);
+      assert(messageObject.read_u8(5) == 0);
+      assert(messageObject.read_u8(6) == 0);
+      assert(messageObject.read_u8(7) == 0);
       if(messageType(messageId) == 0x10) {
-         uint64_t cbl = messageData(messageId).uint64(8);
+         uint64_t cbl = messageData(messageId).read_u64(8);
          if(cbl != INVALID_SIZE) {
-            continuationBlocks.push({cbl, messageData(messageId).uint64(16)});
+            continuationBlocks.push({cbl, messageData(messageId).read_u64(16)});
          }
       }
-      assert(messageObject.uint16(0) == messageType(messageId));
-      assert(messageObject.uint16(0) <= 0x18);
+      assert(messageObject.read_u16(0) == messageType(messageId));
+      assert(messageObject.read_u16(0) <= 0x18);
       if(++messageId < numberOfMessages()) {
          uint16_t size = messageSize_ + 8;
          currentMessageSize += size;

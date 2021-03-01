@@ -74,16 +74,16 @@ void H5BTreeVersion2::init()
 {
     std::string signature = std::string(address(), 4);
     assert(signature == "BTHD");
-    uint32_t version = uint8(4);
+    uint32_t version = read_u8(4);
     assert(version == 0);
-    unsigned int btreeType = uint8(5);
+    unsigned int btreeType = read_u8(5);
     assert(btreeType == 5);
-    _nodeSize = uint32(6);
-    _recordSize = uint16(10);
-    _depth = uint16(12);
-    _rootNodeAddress = uint64(16);
-    _numberOfRecordsInRootNode = uint16(24);
-    _totalNumberOfRecords = uint64(26);
+    _nodeSize = read_u32(6);
+    _recordSize = read_u16(10);
+    _depth = read_u16(12);
+    _rootNodeAddress = read_u64(16);
+    _numberOfRecordsInRootNode = read_u16(24);
+    _totalNumberOfRecords = read_u64(26);
 
     _maximumNumberOfRecordsOfLeaveNodes = (_nodeSize - PREFIX_SIZE)/_recordSize;
     _sizeOfNumberOfRecordsForChildNode = getNumberOfBytesNeededToStoreValue(_maximumNumberOfRecordsOfLeaveNodes);
@@ -136,7 +136,7 @@ size_t H5BTreeVersion2::getRecordAddressWithinInternalNodeFromLinkHash(uint32_t 
 {
     for(size_t record=0; record < node.numberOfRecords; ++record) {
         size_t recordOffset = 6 + record*_recordSize;
-        uint32_t recordHash = node.uint32(recordOffset);
+        uint32_t recordHash = node.read_u32(recordOffset);
         if(linkHash < recordHash) {
             if(node.depth == 0) throw std::out_of_range("hash not found");
             return getRecordAddressWithinInternalNodeFromLinkHash(linkHash, getChildNode(node, record));
@@ -162,7 +162,7 @@ size_t H5BTreeVersion2::getChildNodeAddress(const Node &parentNode, size_t child
 {
     assert(parentNode.depth > 0);
     size_t address = 6 + _recordSize*parentNode.numberOfRecords + childNodeNumber*getSizeOfChildPointerMultiplet(parentNode.depth);
-    return parentNode.uint64(address);
+    return parentNode.read_u64(address);
 }
 
 size_t H5BTreeVersion2::getNumberOfRecordsForChildNode(const Node &parentNode, size_t childNodeNumber) const
