@@ -22,26 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef H5SUPERBLOCK_H
-#define H5SUPERBLOCK_H
-#include "H5Object.h"
+#ifndef PATH_RESOLVER_V0_H
+#define PATH_RESOLVER_V0_H
+#include "H5LinkInfoMessage.h"
+#include "H5LinkMsg.h"
+#include "H5Path.h"
 #include "H5SymbolTableEntry.h"
 #include "ResolvedPath.h"
 
-/// See https://www.hdfgroup.org/HDF5/doc/H5.format.html#Superblock
-
-class H5Superblock : public H5Object {
+class PathResolverV0 {
 public:
-    H5Superblock() = default;
-    H5Superblock(const char* fileAddress);
-
+    PathResolverV0(const H5SymbolTableEntry& root);
     ResolvedPath resolve(const H5Path& path);
 
 private:
-    int _version;
+    const H5SymbolTableEntry _root;
 
-    ResolvedPath resolveV0(const H5Path& path);
-    ResolvedPath resolveV2(const H5Path& path);
+    ResolvedPath findPathInObjectHeader(const H5SymbolTableEntry& parentEntry,
+                                        const std::string pathItem,
+                                        const H5Path& remainingPath);
+    uint32_t getFractalHeapOffset(const H5LinkInfoMsg& linkInfoMsg,
+                                  const std::string& pathItem) const;
+    ResolvedPath findPathInLinkMsg(const H5SymbolTableEntry& parentEntry,
+                                   const H5LinkMsg& linkMsg,
+                                   const H5Path& remainingPath);
+    ResolvedPath findPathInScratchSpace(H5SymbolTableEntry parentEntry,
+                                        H5SymbolTableEntry symbolTableEntry,
+                                        const H5Path& remainingPath);
+    ResolvedPath resolvePathInSymbolTableEntry(const H5SymbolTableEntry& in,
+                                               const H5Path& path);
 };
 
-#endif  // H5SUPERBLOCK_H
+#endif  // PATH_RESOLVER_V1_H

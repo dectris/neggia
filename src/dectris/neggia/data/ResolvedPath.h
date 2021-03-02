@@ -22,26 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef H5SUPERBLOCK_H
-#define H5SUPERBLOCK_H
-#include "H5Object.h"
-#include "H5SymbolTableEntry.h"
-#include "ResolvedPath.h"
+#ifndef RESOLVED_PATH_H
+#define RESOLVED_PATH_H
+#include <memory>
+#include <string>
+#include "H5ObjectHeader.h"
+#include "H5Path.h"
 
-/// See https://www.hdfgroup.org/HDF5/doc/H5.format.html#Superblock
-
-class H5Superblock : public H5Object {
-public:
-    H5Superblock() = default;
-    H5Superblock(const char* fileAddress);
-
-    ResolvedPath resolve(const H5Path& path);
-
-private:
-    int _version;
-
-    ResolvedPath resolveV0(const H5Path& path);
-    ResolvedPath resolveV2(const H5Path& path);
+struct ResolvedPath {
+    // When resolving a path in hdf5 the result can either be a link to an
+    // external file or a H5ObjectHeader.
+    // gcc4.8 does not support std::optional yet so we use an unique pointer
+    // to externalfile struct. If set, objectHeader will be invalid.
+    struct ExternalFile {
+        std::string filename;
+        H5Path h5Path;
+    };
+    H5ObjectHeader objectHeader;
+    std::unique_ptr<ExternalFile> externalFile;
 };
 
-#endif  // H5SUPERBLOCK_H
+#endif  // RESOLVED_PATH_H

@@ -49,9 +49,23 @@ Dataset::Dataset(const H5File& h5File, const std::string& path)
         _dataSize(0),
         _dataTypeId(-1),
         _isSigned(false) {
-    H5SymbolTableEntry root =
-            H5Superblock(_h5File.fileAddress()).rootGroupSymbolTableEntry();
-    resolvePath(root, path);
+    H5Superblock root(_h5File.fileAddress());
+    try {
+        auto resolvedPath = root.resolve(path);
+        while (resolvedPath.externalFile.get() != nullptr) {
+            auto targetFile = resolvedPath.externalFile->filename;
+            if (targetFile[0] != '/')
+                targetFile = _h5File.fileDir() + "/" + targetFile;
+            _h5File = H5File(targetFile);
+            root = H5Superblock(_h5File.fileAddress());
+            resolvedPath = root.resolve(resolvedPath.externalFile->h5Path);
+        }
+        _dataSymbolObjectHeader = resolvedPath.objectHeader;
+    } catch (std::exception& exc) {
+        std::cerr << "exception during path resolve: " << exc.what()
+                  << std::endl;
+        throw exc;
+    }
     parseDataSymbolTable();
 }
 
@@ -110,6 +124,63 @@ size_t Dataset::getSizeOfOutData() const {
     return s;
 }
 
+namespace {
+template <class T1, class T2>
+bool chunkCompareGreaterEqual(const T1* key0, const T2* key1, size_t len) {
+    for (ssize_t idx = ((ssize_t)len) - 1; idx >= 0; --idx) {
+        if (key0[idx] < key1[idx])
+            return false;
+        if (key0[idx] > key1[idx])
+            return true;
+    }
+    return true;
+}
+}  // namespace
+
+H5Object Dataset::dataChunkFromObjectHeader(
+        const H5ObjectHeader& objHeader,
+        const std::vector<size_t>& offset) const {
+    const size_t keySize = 8 + offset.size() * 8;
+    const size_t childSize = 8;
+
+    for (int i = 0; i < objHeader.numberOfMessages(); ++i) {
+        H5HeaderMessage msg(objHeader.headerMessage(i));
+        if (msg.type == H5DataLayoutMsg::TYPE_ID) {
+            H5DataLayoutMsg dataLayoutMsg(msg.object);
+            H5BLinkNode bTree(dataLayoutMsg.chunkBTree());
+
+            while (bTree.nodeLevel() > 0) {
+                bool found = false;
+                for (int i = bTree.entriesUsed() - 1; i >= 0; --i) {
+                    H5Object key(bTree + 24 + i * (keySize + childSize));
+                    if (chunkCompareGreaterEqual(
+                                offset.data(), (const uint64_t*)key.address(8),
+                                offset.size()))
+                    {
+                        bTree = H5BLinkNode(key.fileAddress(),
+                                            key.read_u64(keySize));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    throw std::runtime_error("Not found");
+            }
+
+            for (int i = 0; i < bTree.entriesUsed(); ++i) {
+                H5Object key(bTree + 24 + i * (keySize + childSize));
+                if (memcmp(key.address(8), offset.data(),
+                           offset.size() * sizeof(uint64_t)) == 0)
+                {
+                    return key;
+                }
+            }
+            throw std::runtime_error("Not found");
+        }
+    }
+    throw std::runtime_error("Missing H5DataCache Layout");
+}
+
 Dataset::ConstDataPointer Dataset::getRawData(
         const std::vector<size_t>& chunkOffset) const {
     const char* rawData = nullptr;
@@ -121,7 +192,8 @@ Dataset::ConstDataPointer Dataset::getRawData(
         std::vector<size_t> chunkOffsetFullSize(chunkOffset);
         while (chunkOffsetFullSize.size() < _chunkSize.size() + 1)
             chunkOffsetFullSize.push_back(0);
-        H5Object dataChunk(_dataSymbolTable.dataChunk(chunkOffsetFullSize));
+        H5Object dataChunk(dataChunkFromObjectHeader(_dataSymbolObjectHeader,
+                                                     chunkOffsetFullSize));
         rawData = dataChunk.fileAddress() +
                   dataChunk.read_u64(8 + chunkOffsetFullSize.size() * 8);
         rawDataSize = dataChunk.read_u32(0);
@@ -136,145 +208,23 @@ void Dataset::read(void* data, const std::vector<size_t>& chunkOffset) const {
     auto rawData = getRawData(chunkOffset);
     size_t s = getSizeOfOutData();
     switch (_filterId) {
-        case -1: {
+        case -1:
             readRawData(rawData, data, s);
-        } break;
-        case LZ4_FILTER: {
+            break;
+        case LZ4_FILTER:
             readLz4Data(rawData, data, s);
-        } break;
-        case BSHUF_H5FILTER: {
+            break;
+        case BSHUF_H5FILTER:
             readBitshuffleData(rawData, data, s);
-        } break;
+            break;
         default:
             throw std::runtime_error("Unknown filter");
     }
 }
 
-void Dataset::resolvePath(const H5SymbolTableEntry& in, const H5Path& path) {
-    assert(in.cacheType() == H5SymbolTableEntry::DATA ||
-           in.cacheType() ==
-                   H5SymbolTableEntry::GROUP);  // makes sense only for groups
-                                                // (1) or objects that contain
-                                                // links via objectheader (cache
-                                                // type = 0, 1)
-    H5SymbolTableEntry parentEntry(
-            path.isAbsolute() ? H5Superblock(_h5File.fileAddress())
-                                        .rootGroupSymbolTableEntry()
-                              : in);
-
-    for (auto itemIterator = path.begin(); itemIterator != path.end();
-         ++itemIterator)
-    {
-        auto item = *itemIterator;
-        if (parentEntry.cacheType() == H5SymbolTableEntry::GROUP) {
-            H5SymbolTableEntry stEntry;
-            try {
-                stEntry = parentEntry.find(item);
-            } catch (const std::out_of_range&) {
-                findPathInObjectHeader(parentEntry, item,
-                                       H5Path(path, itemIterator + 1));
-                return;
-            }
-            if (stEntry.cacheType() == H5SymbolTableEntry::LINK) {
-                findPathInScratchSpace(parentEntry, stEntry,
-                                       H5Path(path, itemIterator + 1));
-                return;
-            } else {
-                parentEntry = stEntry;
-                continue;
-            }
-        } else {
-            throw std::runtime_error(
-                    "Expected GROUP (cache_type = 1) at path item " + item);
-        }
-    }
-
-    _dataSymbolTable = parentEntry;
-}
-
-void Dataset::findPathInScratchSpace(H5SymbolTableEntry parentEntry,
-                                     H5SymbolTableEntry symbolTableEntry,
-                                     const H5Path& remainingPath) {
-    size_t targetNameOffset = symbolTableEntry.getOffsetToLinkValue();
-    H5LocalHeap treeHeap =
-            H5Object(_h5File.fileAddress(), parentEntry.getAddressOfHeap());
-    H5Path targetPath(treeHeap.data(targetNameOffset));
-    resolvePath(parentEntry, targetPath + remainingPath);
-}
-
-void Dataset::findPathInLinkMsg(const H5SymbolTableEntry& parentEntry,
-                                const H5LinkMsg& linkMsg,
-                                const H5Path& remainingPath) {
-    if (linkMsg.linkType() == H5LinkMsg::SOFT) {
-        H5Path targetPath(linkMsg.targetPath());
-        resolvePath(parentEntry, targetPath + remainingPath);
-        return;
-    } else if (linkMsg.linkType() == H5LinkMsg::EXTERNAL) {
-        std::string targetFile = linkMsg.targetFile();
-        if (targetFile[0] != '/')
-            targetFile = _h5File.fileDir() + "/" + targetFile;
-        _h5File = H5File(targetFile);
-        H5Path targetPath(linkMsg.targetPath());
-        resolvePath(
-                H5Superblock(_h5File.fileAddress()).rootGroupSymbolTableEntry(),
-                targetPath + remainingPath);
-        return;
-    }
-}
-
-uint32_t Dataset::getFractalHeapOffset(const H5LinkInfoMsg& linkInfoMsg,
-                                       const std::string& pathItem) const {
-    size_t btreeAddress = linkInfoMsg.getBTreeAddress();
-    if (btreeAddress == H5_INVALID_ADDRESS) {
-        throw std::out_of_range("Invalid address");
-    }
-    H5BTreeVersion2 btree(_h5File.fileAddress(), btreeAddress);
-    H5Object heapRecord(_h5File.fileAddress(),
-                        btree.getRecordAddress(pathItem));
-    return heapRecord.read_u32(5);
-}
-
-void Dataset::findPathInObjectHeader(const H5SymbolTableEntry& parentEntry,
-                                     const std::string pathItem,
-                                     const H5Path& remainingPath) {
-    H5ObjectHeader objectHeader = parentEntry.objectHeader();
-    for (size_t i = 0; i < objectHeader.numberOfMessages(); ++i) {
-        H5HeaderMessage msg(objectHeader.headerMessage(i));
-        switch (msg.type) {
-            case H5LinkMsg::TYPE_ID: {
-                H5LinkMsg linkMsg(msg.object);
-                if (linkMsg.linkName() != pathItem)
-                    continue;
-                findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
-                return;
-            } break;
-            case H5LinkInfoMsg::TYPE_ID: {
-                uint32_t heapOffset;
-                H5LinkInfoMsg linkInfoMsg(msg.object);
-                try {
-                    heapOffset = getFractalHeapOffset(linkInfoMsg, pathItem);
-                } catch (const std::out_of_range&) {
-                    continue;
-                }
-                H5FractalHeap fractalHeap(_h5File.fileAddress(),
-                                          linkInfoMsg.getFractalHeapAddress());
-                H5LinkMsg linkMsg(fractalHeap.getHeapObject(heapOffset));
-                assert(linkMsg.linkName() == pathItem);
-                findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
-                return;
-            } break;
-            default: {
-                continue;
-            }
-        }
-    }
-    throw std::out_of_range("Not found");
-}
-
 void Dataset::parseDataSymbolTable() {
-    H5ObjectHeader dataObjectHeader = _dataSymbolTable.objectHeader();
-    for (int i = 0; i < dataObjectHeader.numberOfMessages(); ++i) {
-        H5HeaderMessage msg(dataObjectHeader.headerMessage(i));
+    for (int i = 0; i < _dataSymbolObjectHeader.numberOfMessages(); ++i) {
+        H5HeaderMessage msg(_dataSymbolObjectHeader.headerMessage(i));
         switch (msg.type) {
             case H5DataspaceMsg::TYPE_ID: {
                 H5DataspaceMsg dataspaceMsg(msg.object);

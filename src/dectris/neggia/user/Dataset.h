@@ -60,18 +60,6 @@ private:
         size_t size;
     };
 
-    void resolvePath(const H5SymbolTableEntry& in, const H5Path& path);
-    void findPathInObjectHeader(const H5SymbolTableEntry& parentEntry,
-                                const std::string pathItem,
-                                const H5Path& remainingPath);
-    void findPathInScratchSpace(H5SymbolTableEntry parentEntry,
-                                H5SymbolTableEntry symbolTableEntry,
-                                const H5Path& remainingPath);
-    void findPathInLinkMsg(const H5SymbolTableEntry& parentEntry,
-                           const H5LinkMsg& linkMsg,
-                           const H5Path& remainingPath);
-    uint32_t getFractalHeapOffset(const H5LinkInfoMsg& linkInfoMsg,
-                                  const std::string& pathItem) const;
     void parseDataSymbolTable();
     void readRawData(ConstDataPointer rawData,
                      void* outData,
@@ -81,10 +69,12 @@ private:
                             void* data,
                             size_t s) const;
     size_t getSizeOfOutData() const;
+    H5Object dataChunkFromObjectHeader(const H5ObjectHeader& objHeader,
+                                       const std::vector<size_t>& offset) const;
     ConstDataPointer getRawData(const std::vector<size_t>& chunkOffset) const;
 
     H5File _h5File;
-    H5SymbolTableEntry _dataSymbolTable;
+    H5ObjectHeader _dataSymbolObjectHeader;
     H5DataLayoutMsg _dataLayoutMsg;
     std::vector<size_t> _dim;
     bool _isChunked;

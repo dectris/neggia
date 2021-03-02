@@ -112,16 +112,17 @@ void H5LinkMsg::_init() {
     size_t linkInformationOffset = linkNameOffset + lengthOfLinkName;
 
     switch (_linkType) {
-        case HARD: {
+        case HARD:
             _hardLinkObjectHeader =
                     H5Object(fileAddress(), read_u64(linkInformationOffset));
-        } break;
+            break;
         case SOFT: {
             size_t length = read_u16(linkInformationOffset);
             _targetFile = "";
             _targetPath =
                     std::string(address(linkInformationOffset + 2), length);
-        } break;
+            break;
+        }
         case EXTERNAL: {
             size_t length = read_u16(linkInformationOffset) -
                             1;  // -1: first byte is used for version number
@@ -138,7 +139,8 @@ void H5LinkMsg::_init() {
                     break;
                 }
             }
-        } break;
+            break;
+        }
         default:
             assert(false);
     }

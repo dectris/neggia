@@ -45,7 +45,6 @@ public:
     uint64_t getAddressOfHeap() const;
     uint32_t getOffsetToLinkValue() const;
     H5SymbolTableEntry find(const std::string& entry) const;
-    H5Object dataChunk(const std::vector<size_t>& offset) const;
 };
 
 #endif  // H5SYMBOLTABLEENTRY_H
