@@ -20,11 +20,7 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
-find_library(GMOCK gmock) # libgmock.a is not found by FindGTest.cmake !!!
-include_directories(${GMOCK_INCLUDE_DIRS})
-set(GTEST_ALL ${GTEST_BOTH_LIBRARIES} ${GMOCK})
+
 enable_testing()
 
 execute_process(
@@ -32,10 +28,10 @@ execute_process(
 )
 
 add_executable(Test_Dataset Test_Dataset.cpp DatasetsFixture.cpp)
-target_link_libraries(Test_Dataset neggia_static z ${GTEST_ALL} pthread)
+target_link_libraries(Test_Dataset neggia_static z gtest gtest_main pthread)
 add_test(Test_Dataset Test_Dataset)
 
 add_executable(Test_XdsPlugin Test_XdsPlugin.cpp DatasetsFixture.cpp $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>)
-target_link_libraries(Test_XdsPlugin z dl ${GTEST_ALL} pthread)
+target_link_libraries(Test_XdsPlugin z dl gtest gtest_main pthread)
 ADD_DEFINITIONS(-DPATH_TO_XDS_PLUGIN=\"${DECTRIS_NEGGIA_XDS_PLUGIN}\")
 add_test(Test_XdsPlugin Test_XdsPlugin)

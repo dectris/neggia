@@ -25,11 +25,8 @@ add_subdirectory(data)
 add_subdirectory(user)
 add_subdirectory(plugin)
 
-find_package(GTest)
-if(GTest_FOUND)
-    message(STATUS "Enabling tests")
+if(BUILD_TESTING)
     add_subdirectory(test)
-else()
-    message(STATUS "Requirements not satisfied. Tests disabled")
 endif()
+
 add_library(neggia_static $<TARGET_OBJECTS:NEGGIA_DATA> $<TARGET_OBJECTS:NEGGIA_USER> $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>)

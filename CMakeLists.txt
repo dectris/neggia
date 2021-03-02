@@ -23,6 +23,8 @@
 cmake_minimum_required(VERSION 3.6)
 project(neggia)
 
+include(CTest)
+
 cmake_policy(SET CMP0005 NEW)
 cmake_policy(SET CMP0003 NEW)
 
@@ -34,5 +36,5 @@ enable_testing()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(VERSION 1.0.2)
 add_definitions(-DVERSION=\"${VERSION}\")
-
+add_subdirectory(third_party)
 add_subdirectory(src)

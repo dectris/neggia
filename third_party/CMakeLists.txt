@@ -1,0 +1,5 @@
+if(BUILD_TESTING)
+    set(BUILD_GMOCK OFF CACHE INTERNAL "")
+    set(INSTALL_GTEST OFF CACHE INTERNAL "")
+    add_subdirectory(googletest EXCLUDE_FROM_ALL)
+endif()
