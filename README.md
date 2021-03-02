@@ -15,11 +15,10 @@ Please note that a recent version of XDS (Version June 1, 2017 or later) is requ
 * cmake 3.6 or later
   * CentOS: yum install -y cmake3
   * OSX: install binary from https://cmake.org
-* For running tests
-  * Google Test (https://github.com/google/googletest.git)
 
 ### Building
 Use cmake or cmake3, depending on what your cmake version 3 executable is called.
+* git submodule update --init
 * mkdir build
 * cd build
 * cmake ..
