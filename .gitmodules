@@ -1,0 +1,3 @@
+[submodule "src/dectris/neggia/test/h5-testfiles"]
+	path = src/dectris/neggia/test/h5-testfiles
+	url = https://github.com/dectris/h5-testfiles

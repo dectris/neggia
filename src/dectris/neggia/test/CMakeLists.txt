@@ -20,9 +20,6 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-find_package(DectrisHdf5 REQUIRED)
-include_directories(${DECTRIS_HDF5_INCLUDE_DIRS})
-
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 find_library(GMOCK gmock) # libgmock.a is not found by FindGTest.cmake !!!
@@ -30,13 +27,15 @@ include_directories(${GMOCK_INCLUDE_DIRS})
 set(GTEST_ALL ${GTEST_BOTH_LIBRARIES} ${GMOCK})
 enable_testing()
 
-set(SOURCES H5DatasetTestFixture.cpp bshuf_h5filter.c bshuf_h5filter.h Lz4Filter.hpp)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/h5-testfiles ${CMAKE_CURRENT_BINARY_DIR}/h5-testfiles
+)
 
-add_executable(Test_Dataset Test_Dataset.cpp ${SOURCES})
-target_link_libraries(Test_Dataset neggia_static ${DECTRIS_HDF5_LIBRARIES} z ${GTEST_ALL} pthread)
+add_executable(Test_Dataset Test_Dataset.cpp DatasetsFixture.cpp)
+target_link_libraries(Test_Dataset neggia_static z ${GTEST_ALL} pthread)
 add_test(Test_Dataset Test_Dataset)
 
-add_executable(Test_XdsPlugin Test_XdsPlugin.cpp ${SOURCES} $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>)
-target_link_libraries(Test_XdsPlugin ${DECTRIS_HDF5_LIBRARIES} z dl ${GTEST_ALL} pthread)
+add_executable(Test_XdsPlugin Test_XdsPlugin.cpp DatasetsFixture.cpp $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>)
+target_link_libraries(Test_XdsPlugin z dl ${GTEST_ALL} pthread)
 ADD_DEFINITIONS(-DPATH_TO_XDS_PLUGIN=\"${DECTRIS_NEGGIA_XDS_PLUGIN}\")
 add_test(Test_XdsPlugin Test_XdsPlugin)

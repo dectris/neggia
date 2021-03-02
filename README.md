@@ -16,7 +16,6 @@ Please note that a recent version of XDS (Version June 1, 2017 or later) is requ
   * CentOS: yum install -y cmake3
   * OSX: install binary from https://cmake.org
 * For running tests
-  * DectrisHdf5 (https://github.com/dectris/DectrisHdf5.git)
   * Google Test (https://github.com/google/googletest.git)
 
 ### Building
