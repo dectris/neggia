@@ -39,6 +39,7 @@ set(SOURCES
         H5SymbolTableNode.cpp
         JenkinsLookup3Checksum.cpp
         Decode.cpp
+        PathResolverV0.cpp
 )
 
 add_library(NEGGIA_DATA OBJECT ${SOURCES})

@@ -25,33 +25,58 @@ SOFTWARE.
 #include "H5Superblock.h"
 #include <assert.h>
 #include "H5SymbolTableEntry.h"
+#include "PathResolverV0.h"
 #include "constants.h"
 
 H5Superblock::H5Superblock(const char* fileAddress) : H5Object(fileAddress, 0) {
     const char magicNumber[] = "\211HDF\r\n\032\n";
     assert(std::string(fileAddress, 8) == std::string(magicNumber));
     int version = (int)fileAddress[8];
+    _version = version;
+}
+
+ResolvedPath H5Superblock::resolve(const H5Path& path) {
+    switch (_version) {
+        case 0:
+            return resolveV0(path);
+        case 2:
+            return resolveV2(path);
+        default:
+            throw(std::runtime_error("superblock version " +
+                                     std::to_string(_version) +
+                                     " not supported."));
+    }
+}
+
+ResolvedPath H5Superblock::resolveV0(const H5Path& path) {
+    // verify header information
+    int version = (int)fileAddress()[8];
     assert(version == 0);
-    int offsetSize = (int)fileAddress[13];
+    int offsetSize = (int)fileAddress()[13];
     assert(offsetSize == 8);
-    int offsetLength = (int)fileAddress[14];
+    int offsetLength = (int)fileAddress()[14];
     assert(offsetLength == 8);
-    assert(fileAddress[15] == 0);
-    uint64_t baseAddress = *(uint64_t*)(fileAddress + 24);
+    assert(fileAddress()[15] == 0);
+    uint64_t baseAddress = *(uint64_t*)(fileAddress() + 24);
     assert(baseAddress == 0);
     uint64_t DriverInformationBlockAddress =
-            *(uint64_t*)(fileAddress + 24 + 3 * offsetSize);
+            *(uint64_t*)(fileAddress() + 24 + 3 * offsetSize);
     assert(DriverInformationBlockAddress == H5_INVALID_ADDRESS);
+    return PathResolverV0(H5SymbolTableEntry(at(24 + 4 * 8))).resolve(path);
 }
 
-int H5Superblock::groupLeafNodeK() const {
-    return read_u16(16);
-}
-
-int H5Superblock::groupInternalNodeK() const {
-    return read_u16(18);
-}
-
-H5SymbolTableEntry H5Superblock::rootGroupSymbolTableEntry() const {
-    return H5SymbolTableEntry(at(24 + 4 * 8));
+ResolvedPath H5Superblock::resolveV2(const H5Path& path) {
+    // verify header information
+    int version = (int)fileAddress()[8];
+    assert(version == 2);
+    int offsetSize = (int)fileAddress()[9];
+    assert(offsetSize == 8);
+    int offsetLength = (int)fileAddress()[10];
+    assert(offsetLength == 8);
+    uint64_t baseAddress = *(uint64_t*)(fileAddress() + 12);
+    assert(baseAddress == 0);
+    uint64_t extensionAddress = *(uint64_t*)(fileAddress() + 20);
+    assert(extensionAddress == H5_INVALID_ADDRESS);
+    uint64_t rootGroupHeaderOffset = *(uint64_t*)(fileAddress() + 36);
+    throw std::runtime_error("resolveV2 not implemented.");
 }
