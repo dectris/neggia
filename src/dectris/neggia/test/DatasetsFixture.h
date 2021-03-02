@@ -22,56 +22,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef TESTH5DATASET_H
-#define TESTH5DATASET_H
+#ifndef DATASETS_FIXTURE_H
+#define DATASETS_FIXTURE_H
 
-#include <cpp/H5Cpp.h>
 #include <gtest/gtest.h>
-#include <hdf5_hl.h>
+#include <sstream>
 #include <string>
-#include <vector>
 
-class H5DatasetTestFixture : public ::testing::Test {
+class TestDataset : public ::testing::Test {
 public:
-    H5DatasetTestFixture();
-    virtual void SetUp();
-    virtual void TearDown();
-
-    std::string getPathToSourceFile() const;
-    std::string getPathToTargetFile(size_t i) const;
-    std::string getSourceFile() const;
-    std::string getTargetFile(size_t i) const;
+    void SetUp();
     std::string getTargetDataset(size_t i) const;
-
-    virtual size_t getNumberOfDatasets() const;
     size_t getNumberOfImages() const;
     size_t getNumberOfTriggers() const;
+
     constexpr static size_t WIDTH = 11;
     constexpr static size_t HEIGHT = 13;
     constexpr static size_t N_FRAMES_PER_DATASET = 5;
     constexpr static double X_PIXEL_SIZE = 0.25;
     constexpr static double Y_PIXEL_SIZE = 0.5;
+
     unsigned int pixelMaskData[WIDTH * HEIGHT];
     using DATA_TYPE = uint16_t;
     DATA_TYPE dataArray[HEIGHT * WIDTH];
 
-private:
-    const std::string testDir;
-    const std::string sourceFile;
-    std::vector<std::string> targetFile;
-    std::vector<std::string> targetDataset;
-    void setupPixelMaskData();
-    void setupData();
-    void setupH5MasterFile(size_t numberOfDatasets);
-    void setupH5DataFiles();
-    template <class T>
-    void writeValue(H5::Group&, const std::string& identifier, const T& data);
-    void writePixelMask(H5::Group&);
-    void writeNumberOfImages(H5::Group&);
-    void writeNumberOfTriggers(H5::Group&);
-    void writeXPixelSize(H5::Group& g);
-    void writeYPixelSize(H5::Group& g);
-    void mkdirRecursively(const std::string& directory);
+protected:
+    virtual size_t getNumberOfDatasets() const = 0;
+    virtual std::string getPathToSourceFile() const = 0;
 };
 
-#endif  // TESTH5DATASET_H
+class TestDatasetArtificialSmall001 : public TestDataset {
+protected:
+    size_t getNumberOfDatasets() const override { return 1; }
+    std::string getPathToSourceFile() const override {
+        return "h5-testfiles/dataset_artificial_small_001/test_master.h5";
+    }
+};
+
+class TestDatasetArtificialLarge001 : public TestDataset {
+protected:
+    size_t getNumberOfDatasets() const override { return 1000; }
+    std::string getPathToSourceFile() const override {
+        return "h5-testfiles/dataset_artificial_large_001/test_master.h5";
+    }
+};
+
+#endif  // DATASETS_FIXTURE_H

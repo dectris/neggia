@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <dectris/neggia/user/H5File.h>
 #include <dlfcn.h>
 #include <array>
 #include <iostream>
-#include "H5DatasetTestFixture.h"
+#include "DatasetsFixture.h"
 
 typedef void (*plugin_open_file)(const char*,
                                  int info_array[1024],
@@ -49,10 +50,10 @@ typedef void (*plugin_get_data)(int* frame_number,
 
 typedef void (*plugin_close_file)(int* error_flag);
 
-class TestXdsPlugin : public H5DatasetTestFixture {
+class TestXdsPlugin : public TestDatasetArtificialSmall001 {
 public:
     void SetUp() {
-        H5DatasetTestFixture::SetUp();
+        TestDataset::SetUp();
         pluginHandle = dlopen(PATH_TO_XDS_PLUGIN, RTLD_NOW);
         open_file = (plugin_open_file)dlsym(pluginHandle, "plugin_open");
         get_header =
@@ -62,10 +63,7 @@ public:
         error_flag = 1;
         memset(info_array, 0, sizeof(info_array));
     }
-    void TearDown() {
-        dlclose(pluginHandle);
-        H5DatasetTestFixture::TearDown();
-    }
+    void TearDown() { dlclose(pluginHandle); }
     void* pluginHandle;
     plugin_open_file open_file;
     plugin_get_header get_header;

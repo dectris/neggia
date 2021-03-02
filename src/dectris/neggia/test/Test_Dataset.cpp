@@ -24,26 +24,9 @@ SOFTWARE.
 
 #include <dectris/neggia/user/Dataset.h>
 #include <dectris/neggia/user/H5File.h>
-#include "H5DatasetTestFixture.h"
+#include "DatasetsFixture.h"
 
-class TestDataset : public H5DatasetTestFixture {
-public:
-    void SetUp() {
-        H5DatasetTestFixture::SetUp();
-        h5File = H5File(getPathToSourceFile());
-    }
-    H5File h5File;
-};
-
-class TestLargeDataset : public TestDataset {
-public:
-    using TestDataset::TestDataset;
-
-protected:
-    size_t getNumberOfDatasets() const { return 1000; }
-};
-
-TEST_F(TestDataset, KeepsFileOpen) {
+TEST_F(TestDatasetArtificialSmall001, KeepsFileOpen) {
     Dataset xp(H5File(getPathToSourceFile()),
                "/entry/instrument/detector/x_pixel_size");
     float val;
@@ -51,9 +34,10 @@ TEST_F(TestDataset, KeepsFileOpen) {
     ASSERT_EQ(val, X_PIXEL_SIZE);
 }
 
-TEST_F(TestDataset, MasterFile) {
+TEST_F(TestDatasetArtificialSmall001, MasterFile) {
     {
-        Dataset xp(h5File, "/entry/instrument/detector/x_pixel_size");
+        Dataset xp(H5File(getPathToSourceFile()),
+                   "/entry/instrument/detector/x_pixel_size");
         assert(xp.dim().empty());
         assert(xp.isChunked() == false);
         assert(xp.dataTypeId() == 1);
@@ -63,7 +47,8 @@ TEST_F(TestDataset, MasterFile) {
         ASSERT_EQ(val, X_PIXEL_SIZE);
     }
     {
-        Dataset yp(h5File, "/entry/instrument/detector/y_pixel_size");
+        Dataset yp(H5File(getPathToSourceFile()),
+                   "/entry/instrument/detector/y_pixel_size");
         assert(yp.dim().empty());
         assert(yp.isChunked() == false);
         assert(yp.dataTypeId() == 1);
@@ -74,7 +59,7 @@ TEST_F(TestDataset, MasterFile) {
     }
     {
         Dataset pixelMask(
-                h5File,
+                H5File(getPathToSourceFile()),
                 "/entry/instrument/detector/detectorSpecific/pixel_mask");
         unsigned int pixelMaskArray[HEIGHT * WIDTH];
         pixelMask.read(pixelMaskArray);
@@ -84,13 +69,15 @@ TEST_F(TestDataset, MasterFile) {
     }
 }
 
-TEST_F(TestDataset, FollowLinkToGroup) {
-    Dataset(h5File, "/entry/link_to_detector_group/x_pixel_size");
+TEST_F(TestDatasetArtificialSmall001, FollowLinkToGroup) {
+    Dataset(H5File(getPathToSourceFile()),
+            "/entry/link_to_detector_group/x_pixel_size");
 }
 
-TEST_F(TestDataset, DataFile) {
+TEST_F(TestDatasetArtificialSmall001, DataFile) {
     for (size_t datasetid = 0; datasetid < getNumberOfDatasets(); ++datasetid) {
-        Dataset dataset(h5File, getTargetDataset(datasetid));
+        Dataset dataset(H5File(getPathToSourceFile()),
+                        getTargetDataset(datasetid));
         for (size_t i = 0; i < N_FRAMES_PER_DATASET; ++i) {
             DATA_TYPE dataArrayCompare[HEIGHT * WIDTH];
             dataset.read(dataArrayCompare, {i, 0, 0});
@@ -100,9 +87,10 @@ TEST_F(TestDataset, DataFile) {
     }
 }
 
-TEST_F(TestLargeDataset, LargeDataFile) {
+TEST_F(TestDatasetArtificialLarge001, LargeDataFile) {
     for (size_t datasetid = 0; datasetid < getNumberOfDatasets(); ++datasetid) {
-        Dataset dataset(h5File, getTargetDataset(datasetid));
+        Dataset dataset(H5File(getPathToSourceFile()),
+                        getTargetDataset(datasetid));
         DATA_TYPE dataArrayCompare[HEIGHT * WIDTH];
         size_t testFrame = N_FRAMES_PER_DATASET - 1;
         dataset.read(dataArrayCompare, {testFrame, 0, 0});
