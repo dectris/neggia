@@ -34,6 +34,10 @@ H5DataspaceMsg::H5DataspaceMsg(const char* fileAddress, size_t offset)
     this->_init();
 }
 
+uint8_t H5DataspaceMsg::version() const {
+    return this->read_u8(0);
+}
+
 uint8_t H5DataspaceMsg::rank() const {
     return this->read_u8(1);
 }
@@ -52,5 +56,5 @@ uint64_t H5DataspaceMsg::maxDim(int i) const {
 }
 
 void H5DataspaceMsg::_init() {
-    assert(this->read_u8(0) == 1);
+    assert(version() == 1);
 }

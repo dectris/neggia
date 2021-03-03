@@ -33,6 +33,7 @@ public:
     H5DataspaceMsg() = default;
     H5DataspaceMsg(const H5Object&);
     H5DataspaceMsg(const char* fileAddress, size_t offset);
+    uint8_t version() const;
     uint8_t rank() const;
     bool maxDims() const;
     uint64_t dim(int i) const;
