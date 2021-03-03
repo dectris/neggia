@@ -26,6 +26,7 @@ SOFTWARE.
 #include <assert.h>
 #include <iostream>
 #include <stack>
+#include <stdexcept>
 #ifdef DEBUG_PARSING
 #include "H5BLinkNode.h"
 #include "H5DataLayoutMsg.h"
