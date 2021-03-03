@@ -43,6 +43,9 @@ private:
 
     void _init();
     void _initV1();
+#ifdef DEBUG_PARSING
+    void _printMsgDebug(const H5HeaderMessage& msg);
+#endif
 };
 
 #endif  // H5OBJECTHEADER_H

@@ -32,6 +32,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -O3")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+option(DEBUG_PARSING "Print debug information during parsing of HDF5" OFF)
+if(DEBUG_PARSING)
+  add_definitions(-DDEBUG_PARSING)
+endif()
+
 enable_testing()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(VERSION 1.0.2)

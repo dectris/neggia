@@ -40,6 +40,7 @@ public:
     H5FilterMsg() = default;
     H5FilterMsg(const char* fileAddress, size_t offset);
     H5FilterMsg(const H5Object&);
+    uint8_t version() const;
     unsigned int nFilters() const;
     uint16_t filterId(int i) const;
     std::string filterName(int i) const;
@@ -47,7 +48,6 @@ public:
     constexpr static unsigned int TYPE_ID = 0xb;
 
 private:
-    uint8_t version() const;
     void _init();
     void _initV1();
 
