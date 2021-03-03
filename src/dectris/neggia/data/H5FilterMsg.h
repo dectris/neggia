@@ -27,7 +27,13 @@ SOFTWARE.
 #include <string>
 #include <vector>
 #include "H5Object.h"
-/// https://www.hdfgroup.org/HDF5/doc/H5.format.html#FilterMessage
+/// https://support.hdfgroup.org/HDF5/doc/H5.format.html#FilterMessage
+
+struct FilterDescription {
+    uint16_t id;
+    std::string name;
+    std::vector<int32_t> client_data;
+};
 
 class H5FilterMsg : public H5Object {
 public:
@@ -41,8 +47,11 @@ public:
     constexpr static unsigned int TYPE_ID = 0xb;
 
 private:
+    uint8_t version() const;
     void _init();
-    std::vector<uint64_t> _offset;
+    void _initV1();
+
+    std::vector<FilterDescription> _filters;
 };
 
 #endif  // H5FILTERMSG_H
