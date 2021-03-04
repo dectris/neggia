@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stack>
 #include <stdexcept>
 #ifdef DEBUG_PARSING
+#include <bitset>
 #include "H5BLinkNode.h"
 #include "H5DataLayoutMsg.h"
 #include "H5DataspaceMsg.h"
@@ -68,6 +69,9 @@ void H5ObjectHeader::_init() {
     switch (version()) {
         case 1:
             _initV1();
+            break;
+        case 2:
+            _initV2();
             break;
         default:
             throw std::runtime_error("Object Header version " +
@@ -139,6 +143,94 @@ void H5ObjectHeader::_initV1() {
         } else {
             break;
         }
+    }
+}
+
+void H5ObjectHeader::_initV2() {
+    uint8_t flags = read_u8(5);
+    size_t skipOptionalBytes = 0;
+    if (flags & (1 << 4)) {
+        skipOptionalBytes += 4;
+    }
+    if (flags & (1 << 5)) {
+        skipOptionalBytes += 16;
+    }
+    size_t optionalBytesInMessageHeader = 0;
+    if (flags & (1 << 2)) {
+        optionalBytesInMessageHeader = 2;
+    }
+    size_t chunk0Size, currentOffset;
+    switch (flags & 3) {
+        case 0:
+            chunk0Size = read_u8(6 + skipOptionalBytes);
+            currentOffset = 6 + skipOptionalBytes + 1;
+            break;
+        case 1:
+            chunk0Size = read_u16(6 + skipOptionalBytes);
+            currentOffset = 6 + skipOptionalBytes + 2;
+            break;
+        case 2:
+            chunk0Size = read_u32(6 + skipOptionalBytes);
+            currentOffset = 6 + skipOptionalBytes + 4;
+            break;
+        case 3:
+            chunk0Size = read_u64(6 + skipOptionalBytes);
+            currentOffset = 6 + skipOptionalBytes + 8;
+            break;
+    }
+#ifdef DEBUG_PARSING
+    std::cerr << " >> Parsing version 2 object header [chunk0size: "
+              << chunk0Size << ", flags: 0b" << std::bitset<8>(flags) << "]"
+              << std::dec << std::endl;
+#endif
+    _addBlockV2(currentOffset, chunk0Size, optionalBytesInMessageHeader);
+}
+
+void H5ObjectHeader::_addBlockV2(size_t currentOffset,
+                                 size_t blockSize,
+                                 size_t optionalBytesInMessageHeader) {
+    constexpr uint64_t INVALID_OFFSET = 0xffffffffffffffff;
+    struct ContBlock {
+        uint64_t addr;
+        uint64_t size;
+    };
+    std::stack<ContBlock> continuationBlocks;
+
+    size_t end_headers = currentOffset + blockSize;
+    while (currentOffset < end_headers) {
+        uint16_t messageType = read_u8(currentOffset);
+        uint16_t messageSize = read_u16(currentOffset + 1);
+        uint8_t messageFlags = read_u8(currentOffset + 3);
+        currentOffset += 4 + optionalBytesInMessageHeader;
+        auto currentMessage = H5HeaderMessage{
+                H5Object(fileAddress(), offset() + currentOffset), messageType};
+        _messages.push_back(currentMessage);
+#ifdef DEBUG_PARSING
+        _printMsgDebug(currentMessage);
+#endif
+
+        currentOffset += messageSize;
+        if (currentMessage.type == 0x10) {
+            uint64_t addr = currentMessage.object.read_u64(0);
+            uint64_t size = currentMessage.object.read_u64(8);
+            if (addr != INVALID_OFFSET) {
+                continuationBlocks.push({addr, size});
+            }
+        }
+    }
+    while (!continuationBlocks.empty()) {
+#ifdef DEBUG_PARSING
+        std::cerr << " >> Add version 2 continuation block" << std::endl;
+#endif
+        const char signatureContinuationBlockV2[] = "OCHK";
+        assert(std::string(&fileAddress()[continuationBlocks.top().addr], 4) ==
+               std::string(signatureContinuationBlockV2));
+        size_t checkSumSize = 8;
+        size_t signatureSize = 4;
+        size_t contOffset = continuationBlocks.top().addr + 4 - offset();
+        _addBlockV2(contOffset, continuationBlocks.top().size - checkSumSize,
+                    optionalBytesInMessageHeader);
+        continuationBlocks.pop();
     }
 }
 
