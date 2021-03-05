@@ -50,6 +50,7 @@ public:
 private:
     void _init();
     void _initV1();
+    void _initV2();
 
     std::vector<FilterDescription> _filters;
 };

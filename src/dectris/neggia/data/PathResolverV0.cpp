@@ -80,7 +80,8 @@ ResolvedPath PathResolverV0::findPathInLinkMsg(
                 targetFile, targetPath + remainingPath});
         return output;
     }
-    throw std::runtime_error("unknown link type" + linkMsg.linkType());
+    throw std::runtime_error("unknown link type" +
+                             std::to_string(linkMsg.linkType()));
 }
 
 uint32_t PathResolverV0::getFractalHeapOffset(

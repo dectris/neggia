@@ -42,6 +42,7 @@ public:
 
 private:
     void _init();
+    uint64_t _dimsOffset;
 };
 
 #endif  // H5DATASPACEMSG_H
