@@ -52,7 +52,7 @@ Dataset::Dataset(const H5File& h5File, const std::string& path)
     H5Superblock root(_h5File.fileAddress());
     try {
         auto resolvedPath = root.resolve(path);
-        while (resolvedPath.externalFile.get() != nullptr) {
+        while (resolvedPath.externalFile) {
             auto targetFile = resolvedPath.externalFile->filename;
             if (targetFile[0] != '/')
                 targetFile = _h5File.fileDir() + "/" + targetFile;

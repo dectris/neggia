@@ -40,6 +40,7 @@ set(SOURCES
         JenkinsLookup3Checksum.cpp
         Decode.cpp
         PathResolverV0.cpp
+        PathResolverV2.cpp
 )
 
 add_library(NEGGIA_DATA OBJECT ${SOURCES})
