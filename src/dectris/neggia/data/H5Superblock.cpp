@@ -24,26 +24,30 @@ SOFTWARE.
 
 #include "H5Superblock.h"
 #include <assert.h>
+#include "H5ObjectHeader.h"
 #include "H5SymbolTableEntry.h"
 #include "PathResolverV0.h"
+#include "PathResolverV2.h"
 #include "constants.h"
 
 H5Superblock::H5Superblock(const char* fileAddress) : H5Object(fileAddress, 0) {
     const char magicNumber[] = "\211HDF\r\n\032\n";
     assert(std::string(fileAddress, 8) == std::string(magicNumber));
-    int version = (int)fileAddress[8];
-    _version = version;
+}
+
+uint8_t H5Superblock::version() const {
+    return read_u8(8);
 }
 
 ResolvedPath H5Superblock::resolve(const H5Path& path) {
-    switch (_version) {
+    switch (version()) {
         case 0:
             return resolveV0(path);
         case 2:
             return resolveV2(path);
         default:
             throw(std::runtime_error("superblock version " +
-                                     std::to_string(_version) +
+                                     std::to_string(version()) +
                                      " not supported."));
     }
 }
@@ -78,5 +82,6 @@ ResolvedPath H5Superblock::resolveV2(const H5Path& path) {
     uint64_t extensionAddress = *(uint64_t*)(fileAddress() + 20);
     assert(extensionAddress == H5_INVALID_ADDRESS);
     uint64_t rootGroupHeaderOffset = *(uint64_t*)(fileAddress() + 36);
-    throw std::runtime_error("resolveV2 not implemented.");
+    return PathResolverV2(H5ObjectHeader(fileAddress(), rootGroupHeaderOffset))
+            .resolve(path);
 }

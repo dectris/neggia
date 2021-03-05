@@ -171,6 +171,6 @@ done:
     return c;
 }
 
-uint32_t JenkinsLookup3Checksum(const std::string& str) {
-    return H5_checksum_lookup3(str.data(), str.length(), 0);
+uint32_t JenkinsLookup3Checksum(const std::string& str, uint32_t initval) {
+    return H5_checksum_lookup3(str.data(), str.length(), initval);
 }

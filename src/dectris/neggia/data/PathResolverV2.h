@@ -1,7 +1,7 @@
 /**
 MIT License
 
-Copyright (c) 2017 DECTRIS Ltd.
+Copyright (c) 2021 DECTRIS Ltd.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef H5SUPERBLOCK_H
-#define H5SUPERBLOCK_H
-#include "H5Object.h"
-#include "H5SymbolTableEntry.h"
+#ifndef PATH_RESOLVER_V2_H
+#define PATH_RESOLVER_V2_H
+#include "H5LinkInfoMessage.h"
+#include "H5LinkMsg.h"
+#include "H5ObjectHeader.h"
+#include "H5Path.h"
 #include "ResolvedPath.h"
 
-/// See https://www.hdfgroup.org/HDF5/doc/H5.format.html#Superblock
-
-class H5Superblock : public H5Object {
+class PathResolverV2 {
 public:
-    H5Superblock() = default;
-    H5Superblock(const char* fileAddress);
-    uint8_t version() const;
-
+    PathResolverV2(const H5ObjectHeader& root);
     ResolvedPath resolve(const H5Path& path);
 
 private:
-    ResolvedPath resolveV0(const H5Path& path);
-    ResolvedPath resolveV2(const H5Path& path);
+    const H5ObjectHeader _root;
+
+    ResolvedPath resolvePathInHeader(const H5ObjectHeader& in,
+                                     const H5Path& path);
+    ResolvedPath findPathInObjectHeader(const H5ObjectHeader& parentEntry,
+                                        const std::string pathItem,
+                                        const H5Path& remainingPath);
+    uint32_t getFractalHeapOffset(const H5LinkInfoMsg& linkInfoMsg,
+                                  const std::string& pathItem) const;
+    ResolvedPath findPathInLinkMsg(const H5ObjectHeader& parentEntry,
+                                   const H5LinkMsg& linkMsg,
+                                   const H5Path& remainingPath);
 };
 
-#endif  // H5SUPERBLOCK_H
+#endif  // PATH_RESOLVER_V2_H
