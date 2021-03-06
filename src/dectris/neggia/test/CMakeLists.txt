@@ -31,6 +31,10 @@ add_executable(Test_Dataset Test_Dataset.cpp DatasetsFixture.cpp)
 target_link_libraries(Test_Dataset neggia_static z gtest gtest_main pthread)
 add_test(Test_Dataset Test_Dataset)
 
+add_executable(Test_EigerData Test_EigerData.cpp)
+target_link_libraries(Test_EigerData neggia_static z gtest gtest_main pthread)
+add_test(Test_EigerData Test_EigerData)
+
 add_executable(Test_H5DataspaceMsg Test_H5DataspaceMsg.cpp)
 target_link_libraries(Test_H5DataspaceMsg neggia_static z gtest gtest_main pthread)
 add_test(Test_H5DataspaceMsg Test_H5DataspaceMsg)
