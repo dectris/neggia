@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "H5Superblock.h"
 #include <assert.h>
+#include <stdexcept>
 #include "H5ObjectHeader.h"
 #include "H5SymbolTableEntry.h"
 #include "PathResolverV0.h"
