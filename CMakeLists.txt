@@ -44,7 +44,7 @@ endif()
 
 enable_testing()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(VERSION 1.0.2)
+set(VERSION 1.1.0)
 add_definitions(-DVERSION=\"${VERSION}\")
 add_subdirectory(third_party)
 add_subdirectory(src)
