@@ -1,6 +1,7 @@
 #include "PathResolverV0.h"
 #include <assert.h>
 #include <memory>
+#include <stdexcept>
 #include "H5BTreeVersion2.h"
 #include "H5FractalHeap.h"
 #include "H5LocalHeap.h"
