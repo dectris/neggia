@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 #include "PathResolverV0.h"
 #include <assert.h>
 #include <memory>

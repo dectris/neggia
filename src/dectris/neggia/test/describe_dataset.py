@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+
 import argparse
 from dataclasses import dataclass
 import hdf5plugin  # must be imported before h5py
