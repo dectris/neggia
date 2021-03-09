@@ -20,28 +20,25 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-set(SOURCES
-        H5BTreeVersion2.cpp
-        H5DataLayoutMsg.cpp
-        H5DatatypeMsg.cpp
-        H5DataspaceMsg.cpp
-        H5FilterMsg.cpp
-        H5FractalHeap.cpp
-        H5LinkInfoMessage.cpp
-        H5LinkMsg.cpp
-        H5Object.cpp
-        H5ObjectHeader.cpp
-        H5Path.cpp
-        H5Superblock.cpp
-        H5BLinkNode.cpp
-        H5LocalHeap.cpp
-        H5SymbolTableEntry.cpp
-        H5SymbolTableNode.cpp
-        JenkinsLookup3Checksum.cpp
-        Decode.cpp
-        PathResolverV0.cpp
-        PathResolverV2.cpp
-)
-
-add_library(NEGGIA_DATA OBJECT ${SOURCES})
-
+add_library(NEGGIA_DATA OBJECT
+  Decode.cpp
+  H5BLinkNode.cpp
+  H5BTreeVersion2.cpp
+  H5DataLayoutMsg.cpp
+  H5DataspaceMsg.cpp
+  H5DatatypeMsg.cpp
+  H5FilterMsg.cpp
+  H5FractalHeap.cpp
+  H5LinkInfoMessage.cpp
+  H5LinkMsg.cpp
+  H5LocalHeap.cpp
+  H5Object.cpp
+  H5ObjectHeader.cpp
+  H5Path.cpp
+  H5Superblock.cpp
+  H5SymbolTableEntry.cpp
+  H5SymbolTableNode.cpp
+  JenkinsLookup3Checksum.cpp
+  PathResolverV0.cpp
+  PathResolverV2.cpp
+  )

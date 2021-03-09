@@ -22,11 +22,15 @@
 
 add_subdirectory(compression_algorithms)
 add_subdirectory(data)
-add_subdirectory(user)
 add_subdirectory(plugin)
+add_subdirectory(user)
+
+add_library(neggia_static
+  $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>
+  $<TARGET_OBJECTS:NEGGIA_DATA>
+  $<TARGET_OBJECTS:NEGGIA_USER>
+  )
 
 if(BUILD_TESTING)
-    add_subdirectory(test)
+  add_subdirectory(test)
 endif()
-
-add_library(neggia_static $<TARGET_OBJECTS:NEGGIA_DATA> $<TARGET_OBJECTS:NEGGIA_USER> $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>)

@@ -20,13 +20,12 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-set (SOURCES
-    H5Error.h
-    H5ToXds.h
-    H5ToXds.cpp
-)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_library(dectris-neggia SHARED ${SOURCES})
+add_definitions(-DVERSION=\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\")
+add_library(dectris-neggia MODULE
+  H5Error.h
+  H5ToXds.cpp
+  H5ToXds.h
+  )
 target_link_libraries(dectris-neggia neggia_static)
 set_target_properties(dectris-neggia PROPERTIES PREFIX "" SUFFIX ".so")
 install(TARGETS dectris-neggia LIBRARY DESTINATION lib)
