@@ -21,7 +21,7 @@
 #  SOFTWARE.
 
 cmake_minimum_required(VERSION 3.6)
-project(neggia)
+project(neggia VERSION 1.1.0)
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/googletest/CMakeLists.txt")
   set(BUILD_TESTING OFF CACHE BOOL "")
@@ -30,21 +30,20 @@ else()
 endif()
 include(CTest)
 
-cmake_policy(SET CMP0005 NEW)
-cmake_policy(SET CMP0003 NEW)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -O3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -O3")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(DEBUG_PARSING "Print debug information during parsing of HDF5" OFF)
 if(DEBUG_PARSING)
   add_definitions(-DDEBUG_PARSING)
 endif()
 
-enable_testing()
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(VERSION 1.1.0)
-add_definitions(-DVERSION=\"${VERSION}\")
-add_subdirectory(third_party)
 add_subdirectory(src)
+add_subdirectory(third_party)
