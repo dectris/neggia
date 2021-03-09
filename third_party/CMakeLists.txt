@@ -1,4 +1,7 @@
 if(BUILD_TESTING)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest/CMakeLists.txt")
+        message(FATAL_ERROR "\ngoogletest submodule required with BUILD_TESTING. \nExecute `git submodule update --init` to initialize the submodule")
+    endif()
     set(BUILD_GMOCK OFF CACHE INTERNAL "")
     set(INSTALL_GTEST OFF CACHE INTERNAL "")
     add_subdirectory(googletest EXCLUDE_FROM_ALL)
