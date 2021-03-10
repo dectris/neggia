@@ -113,6 +113,7 @@ TEST_F(TestXdsPlugin, TestGetHeader) {
     ASSERT_EQ(qx, X_PIXEL_SIZE);
     ASSERT_EQ(qy, Y_PIXEL_SIZE);
     ASSERT_EQ(info_array[0], DECTRIS_VENDOR);
+    ASSERT_EQ(info_array[1], 0);  // Enforced by XDS
     ASSERT_EQ(number_of_frames, getNumberOfImages() * getNumberOfTriggers());
     close_file(&error_flag);
 }
