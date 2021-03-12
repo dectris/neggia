@@ -8,6 +8,9 @@
 #include "PathResolverV0.h"
 #include "PathResolverV2.h"
 #include "constants.h"
+#ifdef DEBUG_PARSING
+#include <iostream>
+#endif
 
 H5Superblock::H5Superblock(const char* fileAddress) : H5Object(fileAddress, 0) {
     const char magicNumber[] = "\211HDF\r\n\032\n";
@@ -19,6 +22,10 @@ uint8_t H5Superblock::version() const {
 }
 
 ResolvedPath H5Superblock::resolve(const H5Path& path) {
+#ifdef DEBUG_PARSING
+    std::cerr << ">>> superblock version " << (int)version() << " resolving "
+              << std::string(path) << "\n";
+#endif
     switch (version()) {
         case 0:
             return resolveV0(path);

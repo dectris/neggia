@@ -12,6 +12,7 @@ public:
     H5DataLayoutMsg() = default;
     H5DataLayoutMsg(const char* fileAddress, size_t offset);
     H5DataLayoutMsg(const H5Object&);
+    uint8_t version() const;
     uint8_t layoutClass() const;
 
     /// for raw and contigous data  (layout class 0,1)

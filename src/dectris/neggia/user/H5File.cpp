@@ -16,6 +16,9 @@ struct UnMap {
 };
 
 std::shared_ptr<char> mapFile(const std::string& fileName) {
+#ifdef DEBUG_PARSING
+    std::cerr << "opening file " << fileName << "\n";
+#endif
     int fd = open(fileName.c_str(), O_RDONLY);
     if (fd < 0) {
         std::cerr << "NEGGIA ERROR: OPENING FILE RETURNED ERROR CODE: " << errno

@@ -40,8 +40,7 @@ Dataset::Dataset(const H5File& h5File, const std::string& path)
         }
         _dataSymbolObjectHeader = resolvedPath.objectHeader;
     } catch (std::exception& exc) {
-        std::cerr << "exception during path resolve: " << exc.what()
-                  << std::endl;
+        std::cerr << "exception during path resolve: " << exc.what() << "\n";
         throw std::out_of_range(exc.what());
     }
     parseDataSymbolTable();
@@ -76,7 +75,11 @@ std::vector<size_t> Dataset::chunkSize() const {
 void Dataset::readRawData(ConstDataPointer rawData,
                           void* outData,
                           size_t outDataSize) const {
-    assert(outDataSize == rawData.size);
+    if (outDataSize != rawData.size) {
+        throw std::runtime_error("cannot read " + std::to_string(outDataSize) +
+                                 " bytes from a dataset of size " +
+                                 std::to_string(rawData.size));
+    }
     memcpy(outData, rawData.data, outDataSize);
 }
 
