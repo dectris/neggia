@@ -184,8 +184,10 @@ size_t getNumberOfTriggers(const H5DataCache* dataCache) {
                   "/entry/instrument/detector/detectorSpecific/ntrigger");
         return readSizeTypeFromDataset(d);
     } catch (const std::out_of_range&) {
-        throw H5Error(-4, "NEGGIA ERROR: CANNOT READ N_TRIGGER FROM ",
-                      dataCache->filename);
+        std::cerr << "NEGGIA WARNING: "
+                     "/entry/instrument/detector/detectorSpecific/ntrigger not "
+                     "found, using ntrigger = 1\n";
+        return 1;
     } catch (const H5Error&) {
         throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE FOR N_TRIGGER");
     }
