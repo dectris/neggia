@@ -14,9 +14,12 @@ def describe(filename):
     number_of_images = master[f"/entry/instrument/detector/detectorSpecific/nimages"][
         ()
     ]
-    number_of_triggers = master[
-        f"/entry/instrument/detector/detectorSpecific/ntrigger"
-    ][()]
+    try:
+        number_of_triggers = master[
+            f"/entry/instrument/detector/detectorSpecific/ntrigger"
+        ][()]
+    except Exception:
+        number_of_triggers = 1
     shape = master["/entry/instrument/detector/detectorSpecific/pixel_mask"][()].shape
     print(
         f"""    CheckXdsPlugin(
