@@ -30,18 +30,17 @@ ResolvedPath H5Superblock::resolve(const H5Path& path) {
         case 0:
             return resolveV0(path);
         case 2:
+        case 3:
             return resolveV2(path);
         default:
-            throw(std::runtime_error("superblock version " +
+            throw std::runtime_error("superblock version " +
                                      std::to_string(version()) +
-                                     " not supported."));
+                                     " not supported.");
     }
 }
 
 ResolvedPath H5Superblock::resolveV0(const H5Path& path) {
     // verify header information
-    int version = (int)fileAddress()[8];
-    assert(version == 0);
     int offsetSize = (int)fileAddress()[13];
     assert(offsetSize == 8);
     int offsetLength = (int)fileAddress()[14];
@@ -57,12 +56,16 @@ ResolvedPath H5Superblock::resolveV0(const H5Path& path) {
 
 ResolvedPath H5Superblock::resolveV2(const H5Path& path) {
     // verify header information
-    int version = (int)fileAddress()[8];
-    assert(version == 2);
     int offsetSize = (int)fileAddress()[9];
     assert(offsetSize == 8);
     int offsetLength = (int)fileAddress()[10];
     assert(offsetLength == 8);
+    if (version() == 3) {
+        // we need to check that the file is not open for write access
+        uint8_t fileConsistencyFlags = (uint8_t)fileAddress()[11];
+        if ((fileConsistencyFlags & 5) > 0)
+            throw std::runtime_error("file opened for write access");
+    }
     uint64_t baseAddress = *(uint64_t*)(fileAddress() + 12);
     assert(baseAddress == 0);
     uint64_t extensionAddress = *(uint64_t*)(fileAddress() + 20);
