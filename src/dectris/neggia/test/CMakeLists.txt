@@ -58,3 +58,14 @@ target_link_libraries(Test_XdsPlugin
   gtest_main
   )
 add_test(Test_XdsPlugin Test_XdsPlugin)
+
+add_executable(Test_XdsPluginWithData
+  $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>
+  Test_XdsPluginWithData.cpp
+  )
+target_link_libraries(Test_XdsPluginWithData
+  dl
+  gtest
+  gtest_main
+  )
+add_test(Test_XdsPluginWithData Test_XdsPluginWithData)
