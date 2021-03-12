@@ -221,7 +221,7 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
             break;
         case H5DataspaceMsg::TYPE_ID: {
             auto typedMsg = H5DataspaceMsg(msg.object);
-            std::cerr << "Dataspace Message [0x" << std::hex
+            std::cerr << "  Dataspace Message [0x" << std::hex
                       << H5DataspaceMsg::TYPE_ID << std::dec
                       << "] - version: " << (int)typedMsg.version()
                       << ", rank: " << (int)typedMsg.rank() << "\n";
@@ -229,7 +229,7 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
         }
         case H5LinkInfoMsg::TYPE_ID: {
             auto typedMsg = H5LinkInfoMsg(msg.object);
-            std::cerr << "Link Info Message [0x" << std::hex
+            std::cerr << "  Link Info Message [0x" << std::hex
                       << H5LinkInfoMsg::TYPE_ID
                       << "] - fractal heap address: 0x"
                       << typedMsg.getFractalHeapAddress()
@@ -239,10 +239,10 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
         }
         case H5DatatypeMsg::TYPE_ID: {
             auto typedMsg = H5DatatypeMsg(msg.object);
-            std::cerr << "Datatype Message [0x" << std::hex
-                      << H5DatatypeMsg::TYPE_ID << std::dec << "] - version: 0x"
-                      << typedMsg.version() << ", type id: 0x"
-                      << typedMsg.typeId()
+            std::cerr << "  Datatype Message [0x" << std::hex
+                      << H5DatatypeMsg::TYPE_ID << std::dec
+                      << "] - version: " << (int)typedMsg.version()
+                      << ", type id: " << typedMsg.typeId()
                       << ", data size: " << (int)typedMsg.dataSize() << "\n";
             break;
         }
@@ -256,17 +256,19 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
             break;
         case H5LinkMsg::TYPE_ID: {
             auto typedMsg = H5LinkMsg(msg.object);
-            std::cerr << "Link Message [0x" << std::hex << H5LinkMsg::TYPE_ID
+            std::cerr << "  Link Message [0x" << std::hex << H5LinkMsg::TYPE_ID
                       << std::dec << "] - link name: '" << typedMsg.linkName()
-                      << "', target file: '" << typedMsg.targetFile()
+                      << "', link type: " << (int)typedMsg.linkType()
+                      << ", target file: '" << typedMsg.targetFile()
                       << "', target path: '" << typedMsg.targetPath() << "'\n";
             break;
         }
         case H5DataLayoutMsg::TYPE_ID: {
             auto typedMsg = H5DataLayoutMsg(msg.object);
-            std::cerr << "DataLayout Message [0x" << std::hex
+            std::cerr << "  DataLayout Message [0x" << std::hex
                       << H5DataLayoutMsg::TYPE_ID << std::dec
-                      << "] - layout class: " << (int)typedMsg.layoutClass()
+                      << "] - version: " << (int)typedMsg.version()
+                      << ", layout class: " << (int)typedMsg.layoutClass()
                       << "\n";
             break;
         }
@@ -276,7 +278,7 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
             break;
         case H5FilterMsg::TYPE_ID: {
             auto typedMsg = H5FilterMsg(msg.object);
-            std::cerr << "Filter Message [0x" << std::hex
+            std::cerr << "  Filter Message [0x" << std::hex
                       << H5FilterMsg::TYPE_ID << "] - version: " << std::dec
                       << (int)typedMsg.version() << ", filters: [";
             if (typedMsg.nFilters() > 0) {

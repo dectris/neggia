@@ -16,6 +16,10 @@ H5DataLayoutMsg::H5DataLayoutMsg(const H5Object& obj) : H5Object(obj) {
     this->_init();
 }
 
+uint8_t H5DataLayoutMsg::version() const {
+    return this->read_u8(0);
+}
+
 uint8_t H5DataLayoutMsg::layoutClass() const {
     return this->read_u8(1);
 }
@@ -59,6 +63,6 @@ uint32_t H5DataLayoutMsg::chunkDim(int i) const {
 }
 
 void H5DataLayoutMsg::_init() {
-    assert(this->read_u8(0) == 3);  // Version == 3
+    assert(version() == 3);
     assert(layoutClass() < 3);
 }
