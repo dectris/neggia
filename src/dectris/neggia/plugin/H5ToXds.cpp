@@ -25,6 +25,7 @@ struct H5DataCache {
     std::unique_ptr<uint32_t[]> pixelMask;
     float xpixelSize;
     float ypixelSize;
+    bool masterFileOnly;
 };
 
 std::unique_ptr<H5DataCache> GLOBAL_HANDLE = nullptr;
@@ -112,6 +113,14 @@ size_t getFrameNumberWithinDataset(size_t globalFrameNumber,
 std::string getPathToDataset(size_t globalFrameNumber,
                              const H5DataCache* dataCache) {
     size_t datasetNumber = globalFrameNumber / dataCache->nframesPerDataset + 1;
+    if (dataCache->masterFileOnly) {
+        if (datasetNumber > 1) {
+            throw H5Error(-2,
+                          "NEGGIA ERROR: Not all frames in master but "
+                          "data_000001 not available");
+        }
+        return "/entry/data/data";
+    }
     std::stringstream ss;
     ss << "/entry/data/data_" << std::setw(6) << std::setfill('0')
        << datasetNumber;
@@ -182,9 +191,10 @@ size_t getNumberOfTriggers(const H5DataCache* dataCache) {
     }
 }
 
-void setNFramesPerDataset(H5DataCache* dataCache) {
+void setNFramesPerDatasetFromPath(H5DataCache* dataCache,
+                                  const std::string& path) {
     try {
-        Dataset dataset(dataCache->h5File, "/entry/data/data_000001");
+        Dataset dataset(dataCache->h5File, path);
         auto dim = dataset.dim();
         assert(dim.size() == 3);
         dataCache->nframesPerDataset = dim[0];
@@ -197,9 +207,18 @@ void setNFramesPerDataset(H5DataCache* dataCache) {
                std::vector<size_t>({1, (unsigned int)dataCache->dimy,
                                     (unsigned int)dataCache->dimx}));
     } catch (const std::out_of_range&) {
-        throw H5Error(-4,
-                      "NEGGIA ERROR: CANNOT OPEN /entry/data/data_000001 FROM ",
+        throw H5Error(-4, "NEGGIA ERROR: CANNOT OPEN " + path + " FROM ",
                       dataCache->filename);
+    }
+}
+
+void setNFramesPerDataset(H5DataCache* dataCache) {
+    try {
+        setNFramesPerDatasetFromPath(dataCache, "/entry/data/data_000001");
+        dataCache->masterFileOnly = false;
+    } catch (const H5Error&) {
+        setNFramesPerDatasetFromPath(dataCache, "/entry/data/data");
+        dataCache->masterFileOnly = true;
     }
 }
 

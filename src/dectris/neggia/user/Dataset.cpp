@@ -42,7 +42,7 @@ Dataset::Dataset(const H5File& h5File, const std::string& path)
     } catch (std::exception& exc) {
         std::cerr << "exception during path resolve: " << exc.what()
                   << std::endl;
-        throw exc;
+        throw std::out_of_range(exc.what());
     }
     parseDataSymbolTable();
 }

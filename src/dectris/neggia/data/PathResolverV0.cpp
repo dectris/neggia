@@ -129,5 +129,5 @@ ResolvedPath PathResolverV0::findPathInObjectHeader(
             }
         }
     }
-    throw std::out_of_range("Not found");
+    throw std::out_of_range("could not find " + pathItem);
 }
