@@ -62,20 +62,52 @@ Type readFromDataset(const Dataset& d) {
     return val;
 }
 
-size_t readSizeTypeFromDataset(const Dataset& d) {
+uint64_t readNonZeroUint(const Dataset& d) {
     assert(d.dataTypeId() == 0);
+    if (d.isSigned()) {
+        int64_t value;
+        switch (d.dataSize()) {
+            case sizeof(int8_t):
+                value = readFromDataset<int8_t>(d);
+                break;
+            case sizeof(int16_t):
+                value = readFromDataset<int16_t>(d);
+                break;
+            case sizeof(int32_t):
+                value = readFromDataset<int32_t>(d);
+                break;
+            case sizeof(int64_t):
+                value = readFromDataset<int64_t>(d);
+                break;
+            default:
+                throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE");
+        }
+        if (value <= 0) {
+            throw H5Error(-4, "NEGGIA ERROR: VALUE ZERO OR NEGATIVE");
+        }
+        return value;
+    }
+    uint64_t value;
     switch (d.dataSize()) {
         case sizeof(uint8_t):
-            return readFromDataset<uint8_t>(d);
+            value = readFromDataset<uint8_t>(d);
+            break;
         case sizeof(uint16_t):
-            return readFromDataset<uint16_t>(d);
+            value = readFromDataset<uint16_t>(d);
+            break;
         case sizeof(uint32_t):
-            return readFromDataset<uint32_t>(d);
+            value = readFromDataset<uint32_t>(d);
+            break;
         case sizeof(uint64_t):
-            return readFromDataset<uint64_t>(d);
+            value = readFromDataset<uint64_t>(d);
+            break;
         default:
             throw H5Error(-4, "NEGGIA ERROR: UNSUPPORTED DATATYPE");
     }
+    if (value == 0) {
+        throw H5Error(-4, "NEGGIA ERROR: VALUE MUST BE NON-ZERO");
+    }
+    return value;
 }
 
 double readFloatFromDataset(const Dataset& d) {
@@ -169,7 +201,7 @@ size_t getNumberOfImages(const H5DataCache* dataCache) {
     try {
         Dataset d(dataCache->h5File,
                   "/entry/instrument/detector/detectorSpecific/nimages");
-        return readSizeTypeFromDataset(d);
+        return readNonZeroUint(d);
     } catch (const std::out_of_range&) {
         throw H5Error(-4, "NEGGIA ERROR: CANNOT READ N_IMAGES FROM ",
                       dataCache->filename);
@@ -182,7 +214,7 @@ size_t getNumberOfTriggers(const H5DataCache* dataCache) {
     try {
         Dataset d(dataCache->h5File,
                   "/entry/instrument/detector/detectorSpecific/ntrigger");
-        return readSizeTypeFromDataset(d);
+        return readNonZeroUint(d);
     } catch (const std::out_of_range&) {
         std::cerr << "NEGGIA WARNING: "
                      "/entry/instrument/detector/detectorSpecific/ntrigger not "
