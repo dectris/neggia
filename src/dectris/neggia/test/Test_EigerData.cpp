@@ -58,10 +58,11 @@ void CheckDatasetChecksum(const std::string& filename,
     auto updateChecksum = [&checkSumCalculated, &ds](
                                   size_t pixel_count,
                                   std::vector<size_t> chunkOffset) {
-        ValueType datasetArray[pixel_count];
-        ds.read(datasetArray, chunkOffset);
+        auto datasetArray =
+                std::unique_ptr<ValueType[]>(new ValueType[pixel_count]);
+        ds.read(datasetArray.get(), chunkOffset);
         checkSumCalculated = JenkinsLookup3Checksum(
-                std::string((const char*)datasetArray,
+                std::string((const char*)datasetArray.get(),
                             pixel_count * sizeof(ValueType)),
                 checkSumCalculated);
     };

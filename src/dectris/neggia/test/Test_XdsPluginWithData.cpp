@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <iostream>
+#include <memory>
 
 typedef void (*plugin_open_file)(const char*,
                                  int info_array[1024],
@@ -75,11 +76,11 @@ public:
         ASSERT_EQ(number_of_frames, number_of_images * number_of_triggers);
 
         // Assert that all frames can be extracted with 'get_data'
-        int dataArrayExtracted[nx * ny];
+        auto dataArrayExtracted = std::unique_ptr<int[]>(new int[nx * ny]);
         for (int i = 0; i < number_of_images * number_of_triggers; ++i) {
             int frameNumber = i + 1;
-            get_data(&frameNumber, &nx, &ny, dataArrayExtracted, info_array,
-                     &error_flag);
+            get_data(&frameNumber, &nx, &ny, dataArrayExtracted.get(),
+                     info_array, &error_flag);
             ASSERT_EQ(error_flag, 0);
         }
 
