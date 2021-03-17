@@ -100,6 +100,10 @@ void Dataset::readBitshuffleData(ConstDataPointer rawData,
 
 size_t Dataset::getSizeOfOutData() const {
     size_t s = _dataSize;
+    if (_isChunked) {
+        assert(_chunkSize == std::vector<size_t>({1, _dim[1], _dim[2]}));
+        return _dataSize * _dim[1] * _dim[2];
+    }
     for (auto d : _dim)
         s *= d;
     return s;
