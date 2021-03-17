@@ -125,6 +125,22 @@ void CheckHdf5(
    The tests therefore check if we can extract the
    same values with neggia */
 
+TEST(TestDatasetEiger1, MasterOnlyNoCompression) {
+    CheckHdf5(
+            "h5-testfiles/datasets_eiger1/"
+            "eiger1_testmode10_0datafiles_4images_none_uint16_master.h5",
+            ExpectedValues<float, uint32_t, uint16_t>{
+                    0,
+                    1030,
+                    1065,
+                    7.5e-5,
+                    7.5e-5,
+                    706946666,
+                    2854193483,
+                    {{"data", {4, 1065, 1030}, 64404092}},
+            });
+}
+
 TEST(TestDatasetEiger1, MasterOnlyBSLZ4) {
     CheckHdf5(
             "h5-testfiles/datasets_eiger1/"
