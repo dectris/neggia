@@ -177,20 +177,93 @@ void setYPixelSize(H5DataCache* dataCache) {
     }
 }
 
+template <typename ValueType>
+std::unique_ptr<ValueType[]> read2D(const Dataset& ds) {
+    assert(ds.dataSize() == sizeof(ValueType));
+    auto dim(ds.dim());
+    assert(dim.size() == 2);
+    size_t s = dim[0] * dim[1];
+    auto output = std::unique_ptr<ValueType[]>(new ValueType[s]);
+    ds.read(output.get());
+    return output;
+}
+
+template <typename ValueType>
+void copyPixelMask(uint32_t* dest, ValueType* src, size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        if (src[i] < 0 || src[i] > std::numeric_limits<uint32_t>::max())
+            throw std::out_of_range(
+                    "pixel mask value not in range [0, 0xffffffff]");
+        dest[i] = src[i];
+    }
+}
+
 void setPixelMask(H5DataCache* dataCache) {
     try {
         Dataset pixelMask(
                 dataCache->h5File,
                 "/entry/instrument/detector/detectorSpecific/pixel_mask");
         assert(pixelMask.dataTypeId() == 0);
-        assert(pixelMask.dataSize() == sizeof(uint32_t));
         auto dim(pixelMask.dim());
         assert(dim.size() == 2);
         dataCache->dimx = (int)dim[1];
         dataCache->dimy = (int)dim[0];
         size_t s = (size_t)(dataCache->dimx * dataCache->dimy);
         dataCache->pixelMask.reset(new uint32_t[s]);
-        pixelMask.read(dataCache->pixelMask.get());
+        if (pixelMask.isSigned()) {
+            switch (pixelMask.dataSize()) {
+                case 1: {
+                    auto pm = read2D<int8_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                case 2: {
+                    auto pm = read2D<int16_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                case 4: {
+                    auto pm = read2D<int32_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                case 8: {
+                    auto pm = read2D<int64_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                default:
+                    throw H5Error(-4,
+                                  "NEGGIA ERROR: UNSUPPORTED DATASIZE FOR "
+                                  "PIXEL MASK");
+            }
+        } else {
+            switch (pixelMask.dataSize()) {
+                case 1: {
+                    auto pm = read2D<uint8_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                case 2: {
+                    auto pm = read2D<uint16_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                case 4: {
+                    dataCache->pixelMask = read2D<uint32_t>(pixelMask);
+                    break;
+                }
+                case 8: {
+                    auto pm = read2D<uint64_t>(pixelMask);
+                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    break;
+                }
+                default:
+                    throw H5Error(-4,
+                                  "NEGGIA ERROR: UNSUPPORTED DATASIZE FOR "
+                                  "PIXEL MASK");
+            }
+        }
     } catch (const std::out_of_range&) {
         throw H5Error(-4, "NEGGIA ERROR: CANNOT READ PIXEL MASK FROM ",
                       dataCache->filename);
