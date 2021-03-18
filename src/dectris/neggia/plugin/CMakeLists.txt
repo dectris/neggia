@@ -1,12 +1,20 @@
 # SPDX-License-Identifier: MIT
 
 add_definitions(-DVERSION=\"${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\")
-add_library(dectris-neggia MODULE
+
+add_library(NEGGIA_PLUGIN OBJECT
   H5Error.h
   H5ToXds.cpp
   H5ToXds.h
   )
-target_link_libraries(dectris-neggia neggia_static)
+
+add_library(dectris-neggia MODULE
+  $<TARGET_OBJECTS:NEGGIA_COMPRESSION_ALGORITHMS>
+  $<TARGET_OBJECTS:NEGGIA_DATA>
+  $<TARGET_OBJECTS:NEGGIA_PLUGIN>
+  $<TARGET_OBJECTS:NEGGIA_USER>
+  )
 set_target_properties(dectris-neggia PROPERTIES PREFIX "" SUFFIX ".so")
+
 install(TARGETS dectris-neggia LIBRARY DESTINATION lib)
 set(DECTRIS_NEGGIA_XDS_PLUGIN ${CMAKE_CURRENT_BINARY_DIR}/dectris-neggia.so CACHE INTERNAL "")
