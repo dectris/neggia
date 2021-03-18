@@ -4,8 +4,6 @@
 #define DATASET_H
 
 #include <dectris/neggia/data/H5DataLayoutMsg.h>
-#include <dectris/neggia/data/H5Path.h>
-#include <dectris/neggia/data/H5SymbolTableEntry.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,7 +23,7 @@ public:
     bool isSigned() const;
     std::vector<size_t> dim() const;
     bool isChunked() const;
-    std::vector<size_t> chunkSize() const;
+    std::vector<size_t> chunkShape() const;
 
     // chunkOffset is ignored for contigous or raw datasets
     void read(void* data,
@@ -33,10 +31,7 @@ public:
                       std::vector<size_t>()) const;
 
 private:
-    struct ConstDataPointer {
-        const char* data;
-        size_t size;
-    };
+    typedef H5DataLayoutMsg::ConstDataPointer ConstDataPointer;
 
     void parseDataSymbolTable();
     void readRawData(ConstDataPointer rawData,
@@ -46,17 +41,12 @@ private:
     void readBitshuffleData(ConstDataPointer rawData,
                             void* data,
                             size_t s) const;
-    size_t getSizeOfOutData() const;
-    H5Object dataChunkFromObjectHeader(const H5ObjectHeader& objHeader,
-                                       const std::vector<size_t>& offset) const;
-    ConstDataPointer getRawData(const std::vector<size_t>& chunkOffset) const;
+    size_t chunkDataSize() const;
 
     H5File _h5File;
     H5ObjectHeader _dataSymbolObjectHeader;
     H5DataLayoutMsg _dataLayoutMsg;
     std::vector<size_t> _dim;
-    bool _isChunked;
-    std::vector<size_t> _chunkSize;
     int _filterId;
     std::vector<int32_t> _filterCdValues;
     size_t _dataSize;

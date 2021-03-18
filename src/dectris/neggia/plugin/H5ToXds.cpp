@@ -237,7 +237,7 @@ void setNFramesPerDatasetFromPath(H5DataCache* dataCache,
         dataCache->datasize = dataset.dataSize();
         assert(dataset.dataTypeId() == 0);
         assert(dataset.isChunked());
-        assert(dataset.chunkSize() ==
+        assert(dataset.chunkShape() ==
                std::vector<size_t>({1, (unsigned int)dataCache->dimy,
                                     (unsigned int)dataCache->dimx}));
     } catch (const std::out_of_range&) {
