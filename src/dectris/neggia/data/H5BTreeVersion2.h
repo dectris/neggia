@@ -12,8 +12,7 @@ public:
     H5BTreeVersion2(const char* fileAddress, size_t offset);
     H5BTreeVersion2(const H5Object& obj);
     size_t getNumberOfRecords() const;
-    size_t getRecordAddress(size_t record) const;
-    size_t getRecordAddress(const std::string& linkName) const;
+    size_t getLinkAddressByName(const std::string& linkName) const;
 
 private:
     struct Node : public H5Object {
@@ -41,6 +40,7 @@ private:
     Node getRootNode() const;
 
     constexpr static size_t PREFIX_SIZE = 10;
+    uint8_t _btreeType;
     size_t _nodeSize;
     size_t _recordSize;
     size_t _depth;

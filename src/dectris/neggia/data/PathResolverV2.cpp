@@ -68,7 +68,8 @@ uint32_t PathResolverV2::getFractalHeapOffset(
         throw std::out_of_range("Invalid address");
     }
     H5BTreeVersion2 btree(_root.fileAddress(), btreeAddress);
-    H5Object heapRecord(_root.fileAddress(), btree.getRecordAddress(pathItem));
+    H5Object heapRecord(_root.fileAddress(),
+                        btree.getLinkAddressByName(pathItem));
     return heapRecord.read_u32(5);
 }
 
