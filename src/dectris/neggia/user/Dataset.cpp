@@ -12,7 +12,6 @@
 #include <dectris/neggia/data/H5LinkMsg.h>
 #include <dectris/neggia/data/H5LocalHeap.h>
 #include <dectris/neggia/data/H5Superblock.h>
-#include <dectris/neggia/data/H5SymbolTableEntry.h>
 #include <dectris/neggia/data/constants.h>
 #include <string.h>
 #include <iostream>
@@ -65,11 +64,11 @@ std::vector<size_t> Dataset::dim() const {
 }
 
 bool Dataset::isChunked() const {
-    return _isChunked;
+    return _dataLayoutMsg.isChunked();
 }
 
-std::vector<size_t> Dataset::chunkSize() const {
-    return _chunkSize;
+std::vector<size_t> Dataset::chunkShape() const {
+    return _dataLayoutMsg.chunkShape();
 }
 
 void Dataset::readRawData(ConstDataPointer rawData,
@@ -98,10 +97,10 @@ void Dataset::readBitshuffleData(ConstDataPointer rawData,
     bshufUncompressLz4(rawData.data, (char*)data, s, elementSize);
 }
 
-size_t Dataset::getSizeOfOutData() const {
+size_t Dataset::chunkDataSize() const {
     size_t s = _dataSize;
-    if (_isChunked) {
-        assert(_chunkSize == std::vector<size_t>({1, _dim[1], _dim[2]}));
+    if (isChunked()) {
+        assert(chunkShape() == std::vector<size_t>({1, _dim[1], _dim[2]}));
         return _dataSize * _dim[1] * _dim[2];
     }
     for (auto d : _dim)
@@ -109,89 +108,9 @@ size_t Dataset::getSizeOfOutData() const {
     return s;
 }
 
-namespace {
-template <class T1, class T2>
-bool chunkCompareGreaterEqual(const T1* key0, const T2* key1, size_t len) {
-    for (ssize_t idx = ((ssize_t)len) - 1; idx >= 0; --idx) {
-        if (key0[idx] < key1[idx])
-            return false;
-        if (key0[idx] > key1[idx])
-            return true;
-    }
-    return true;
-}
-}  // namespace
-
-H5Object Dataset::dataChunkFromObjectHeader(
-        const H5ObjectHeader& objHeader,
-        const std::vector<size_t>& offset) const {
-    const size_t keySize = 8 + offset.size() * 8;
-    const size_t childSize = 8;
-
-    for (int i = 0; i < objHeader.numberOfMessages(); ++i) {
-        H5HeaderMessage msg(objHeader.headerMessage(i));
-        if (msg.type == H5DataLayoutMsg::TYPE_ID) {
-            H5DataLayoutMsg dataLayoutMsg(msg.object);
-            H5BLinkNode bTree(dataLayoutMsg.chunkBTree());
-
-            while (bTree.nodeLevel() > 0) {
-                bool found = false;
-                for (int i = bTree.entriesUsed() - 1; i >= 0; --i) {
-                    H5Object key(bTree + 24 + i * (keySize + childSize));
-                    if (chunkCompareGreaterEqual(
-                                offset.data(), (const uint64_t*)key.address(8),
-                                offset.size()))
-                    {
-                        bTree = H5BLinkNode(key.fileAddress(),
-                                            key.read_u64(keySize));
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                    throw std::runtime_error("Not found");
-            }
-
-            for (int i = 0; i < bTree.entriesUsed(); ++i) {
-                H5Object key(bTree + 24 + i * (keySize + childSize));
-                if (memcmp(key.address(8), offset.data(),
-                           offset.size() * sizeof(uint64_t)) == 0)
-                {
-                    return key;
-                }
-            }
-            throw std::runtime_error("Not found");
-        }
-    }
-    throw std::runtime_error("Missing H5DataCache Layout");
-}
-
-Dataset::ConstDataPointer Dataset::getRawData(
-        const std::vector<size_t>& chunkOffset) const {
-    const char* rawData = nullptr;
-    size_t rawDataSize = 0;
-    if (_isChunked) {
-        // internally hdf5 stores chunk size with one dimension more than the
-        // dimensions of the dataset
-        // https://www.hdfgroup.org/HDF5/doc/H5.format.html#LayoutMessage
-        std::vector<size_t> chunkOffsetFullSize(chunkOffset);
-        while (chunkOffsetFullSize.size() < _chunkSize.size() + 1)
-            chunkOffsetFullSize.push_back(0);
-        H5Object dataChunk(dataChunkFromObjectHeader(_dataSymbolObjectHeader,
-                                                     chunkOffsetFullSize));
-        rawData = dataChunk.fileAddress() +
-                  dataChunk.read_u64(8 + chunkOffsetFullSize.size() * 8);
-        rawDataSize = dataChunk.read_u32(0);
-    } else {
-        rawData = _dataLayoutMsg.dataAddress();
-        rawDataSize = _dataLayoutMsg.dataSize();
-    }
-    return ConstDataPointer{rawData, rawDataSize};
-}
-
 void Dataset::read(void* data, const std::vector<size_t>& chunkOffset) const {
-    auto rawData = getRawData(chunkOffset);
-    size_t s = getSizeOfOutData();
+    auto rawData = _dataLayoutMsg.getRawData(chunkOffset);
+    size_t s = chunkDataSize();
     switch (_filterId) {
         case -1:
             readRawData(rawData, data, s);
@@ -221,22 +140,6 @@ void Dataset::parseDataSymbolTable() {
             }
             case H5DataLayoutMsg::TYPE_ID: {
                 _dataLayoutMsg = H5DataLayoutMsg(msg.object);
-                switch (_dataLayoutMsg.layoutClass()) {
-                    case 0:
-                    case 1:
-                        _isChunked = false;
-                        break;
-                    case 2:
-                        _isChunked = true;
-                        _chunkSize.clear();
-                        for (size_t i = 0; i < _dataLayoutMsg.chunkDims() - 1;
-                             ++i) {
-                            _chunkSize.push_back(_dataLayoutMsg.chunkDim(i));
-                        }
-                        break;
-                    default:
-                        assert(false);
-                }
                 break;
             }
             case H5FilterMsg::TYPE_ID: {
