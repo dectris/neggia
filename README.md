@@ -54,6 +54,24 @@ pip3 install hdf5plugin h5py
 bin/check_h5_compatibility.py your_master_file.h5
 ```
 
+### Neggia file support
+
+For performance reasons neggia is parsing HDF5 files without the help
+of the official HDF5 library. Therefore we cannot always guarantee
+support for customly written files.
+
+To test if our neggia plugin can open your file,
+build everything as described below down and run:
+
+```
+bin/check_h5_plugin your_master_file.h5
+```
+
+If neggia cannot open your HDF5 file you can enable CMake flag DEBUG_PARSING
+when building neggia. Neggia will then print a lot of parsing information
+which makes it easier to add parsing capabilities for new HDF5 object
+messages. Pull-requests here on github are welcome.
+
 ## Build & Test
 
 Please use only tagged release commits for your production environment.
