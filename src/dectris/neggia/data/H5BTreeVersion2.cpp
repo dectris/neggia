@@ -31,12 +31,9 @@ H5BTreeVersion2::Node H5BTreeVersion2::getRootNode() const {
     return rootNode;
 }
 
-size_t H5BTreeVersion2::getRecordAddress(size_t record) const {
-    Node rootNode = getRootNode();
-    return getRecordAddressWithinInternalNode(record, rootNode);
-}
-
-size_t H5BTreeVersion2::getRecordAddress(const std::string& linkName) const {
+size_t H5BTreeVersion2::getLinkAddressByName(
+        const std::string& linkName) const {
+    assert(_btreeType == 5);
     Node rootNode = getRootNode();
     uint32_t hash = JenkinsLookup3Checksum(linkName);
     return getRecordAddressWithinInternalNodeFromLinkHash(hash, rootNode);
@@ -47,8 +44,7 @@ void H5BTreeVersion2::init() {
     assert(signature == "BTHD");
     uint32_t version = read_u8(4);
     assert(version == 0);
-    unsigned int btreeType = read_u8(5);
-    assert(btreeType == 5);
+    _btreeType = read_u8(5);
     _nodeSize = read_u32(6);
     _recordSize = read_u16(10);
     _depth = read_u16(12);
