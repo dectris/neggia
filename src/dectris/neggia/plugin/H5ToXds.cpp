@@ -22,7 +22,7 @@ struct H5DataCache {
     int dimy;
     int datasize;
     int nframesPerDataset;
-    std::unique_ptr<uint32_t[]> pixelMask;
+    std::unique_ptr<int32_t[]> mask;
     float xpixelSize;
     float ypixelSize;
     bool masterFileOnly;
@@ -36,22 +36,39 @@ void printVersionInfo() {
 }
 
 template <class T>
+int32_t applyOverflow(T value);
+
+template <>
+int32_t applyOverflow<uint32_t>(uint32_t value) {
+    // XDS uses int32_t pixel values for processing therefore
+    // cannot use any pixels from uint32_t >= 2**31
+    // these values must be set to -1.
+    return (value > INT32_MAX) ? -1 : value;
+}
+
+template <>
+int32_t applyOverflow<uint16_t>(uint16_t value) {
+    // For conversion from uint16_t we only need to set the
+    // 'overflow' value of 0xFFFF to -1. All other values
+    // from uint16_t are allowed.
+    return (value == 0xFFFF) ? -1 : value;
+}
+
+template <>
+int32_t applyOverflow<uint8_t>(uint8_t value) {
+    // For conversion from uint8_t we only need to set the
+    // 'overflow' value of 0xFF to -1. All other values
+    // from uint8_t are allowed.
+    return (value == 0xFF) ? -1 : value;
+}
+
+template <class T>
 void applyMaskAndTransformToInt32(const T* indata,
                                   int outdata[],
-                                  const uint32_t* maskData,
+                                  const int32_t* mask,
                                   size_t size) {
-    constexpr size_t maxSigned = (size_t)
-            std::numeric_limits<typename std::make_signed<T>::type>::max();
     for (size_t j = 0; j < size; ++j) {
-        if (maskData[j] & 0x1) {
-            outdata[j] = -1;
-        } else if (maskData[j] & 30) {  // 30 = 2 + 4 + 8 + 16
-            outdata[j] = -2;
-        } else if ((size_t)indata[j] >= maxSigned) {
-            outdata[j] = -1;
-        } else {
-            outdata[j] = (int)indata[j];
-        }
+        outdata[j] = mask[j] ? mask[j] : applyOverflow(indata[j]);
     }
 }
 
@@ -189,12 +206,18 @@ std::unique_ptr<ValueType[]> read2D(const Dataset& ds) {
 }
 
 template <typename ValueType>
-void copyPixelMask(uint32_t* dest, ValueType* src, size_t count) {
+void preprocessPixelMask(int32_t* dest, ValueType* src, size_t count) {
     for (size_t i = 0; i < count; ++i) {
         if (src[i] < 0 || src[i] > std::numeric_limits<uint32_t>::max())
             throw std::out_of_range(
                     "pixel mask value not in range [0, 0xffffffff]");
-        dest[i] = src[i];
+        if (src[i] & 0x1) {
+            dest[i] = -1;
+        } else if (src[i] & 0x1e) {
+            dest[i] = -2;
+        } else {
+            dest[i] = 0;
+        }
     }
 }
 
@@ -209,27 +232,27 @@ void setPixelMask(H5DataCache* dataCache) {
         dataCache->dimx = (int)dim[1];
         dataCache->dimy = (int)dim[0];
         size_t s = (size_t)(dataCache->dimx * dataCache->dimy);
-        dataCache->pixelMask.reset(new uint32_t[s]);
+        dataCache->mask.reset(new int32_t[s]);
         if (pixelMask.isSigned()) {
             switch (pixelMask.dataSize()) {
                 case 1: {
                     auto pm = read2D<int8_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 2: {
                     auto pm = read2D<int16_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 4: {
                     auto pm = read2D<int32_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 8: {
                     auto pm = read2D<int64_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 default:
@@ -241,21 +264,22 @@ void setPixelMask(H5DataCache* dataCache) {
             switch (pixelMask.dataSize()) {
                 case 1: {
                     auto pm = read2D<uint8_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 2: {
                     auto pm = read2D<uint16_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 4: {
-                    dataCache->pixelMask = read2D<uint32_t>(pixelMask);
+                    auto pm = read2D<uint32_t>(pixelMask);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 case 8: {
                     auto pm = read2D<uint64_t>(pixelMask);
-                    copyPixelMask(dataCache->pixelMask.get(), pm.get(), s);
+                    preprocessPixelMask(dataCache->mask.get(), pm.get(), s);
                     break;
                 }
                 default:
@@ -335,17 +359,17 @@ void applyMaskAndTransformToInt32(const H5DataCache* dataCache,
     switch (dataCache->datasize) {
         case 1:
             applyMaskAndTransformToInt32((const uint8_t*)indata, outdata,
-                                         dataCache->pixelMask.get(),
+                                         dataCache->mask.get(),
                                          dataCache->dimx * dataCache->dimy);
             break;
         case 2:
             applyMaskAndTransformToInt32((const uint16_t*)indata, outdata,
-                                         dataCache->pixelMask.get(),
+                                         dataCache->mask.get(),
                                          dataCache->dimx * dataCache->dimy);
             break;
         case 4:
             applyMaskAndTransformToInt32((const uint32_t*)indata, outdata,
-                                         dataCache->pixelMask.get(),
+                                         dataCache->mask.get(),
                                          dataCache->dimx * dataCache->dimy);
             break;
         default: {
