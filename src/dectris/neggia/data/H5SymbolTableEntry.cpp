@@ -7,7 +7,6 @@
 #include <sstream>
 #include <stdexcept>
 #include "H5BLinkNode.h"
-#include "H5DataLayoutMsg.h"
 #include "H5LocalHeap.h"
 #include "H5Superblock.h"
 #include "H5SymbolTableNode.h"

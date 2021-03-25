@@ -23,6 +23,14 @@ target_link_libraries(Test_EigerData
   )
 add_test(Test_EigerData Test_EigerData)
 
+add_executable(Test_DifferentH5Ver Test_DifferentH5Ver.cpp)
+target_link_libraries(Test_DifferentH5Ver
+  gtest
+  gtest_main
+  neggia_static
+  )
+add_test(Test_DifferentH5Ver Test_DifferentH5Ver)
+
 add_executable(Test_H5DataspaceMsg Test_H5DataspaceMsg.cpp)
 target_link_libraries(Test_H5DataspaceMsg
   gtest

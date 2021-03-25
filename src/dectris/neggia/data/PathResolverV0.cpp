@@ -35,7 +35,8 @@ ResolvedPath PathResolverV0::resolvePathInSymbolTableEntry(
             try {
                 stEntry = parentEntry.find(item);
             } catch (const std::out_of_range&) {
-                return findPathInObjectHeader(parentEntry, item,
+                return findPathInObjectHeader(parentEntry,
+                                              parentEntry.objectHeader(), item,
                                               H5Path(path, itemIterator + 1));
             }
             if (stEntry.cacheType() == H5SymbolTableEntry::LINK) {
@@ -50,9 +51,7 @@ ResolvedPath PathResolverV0::resolvePathInSymbolTableEntry(
                     "Expected GROUP (cache_type = 1) at path item " + item);
         }
     }
-    auto output = ResolvedPath{};
-    output.objectHeader = parentEntry.objectHeader();
-    return output;
+    return ResolvedPath{parentEntry.objectHeader(), {}, {}};
 }
 
 ResolvedPath PathResolverV0::findPathInScratchSpace(
@@ -71,20 +70,34 @@ ResolvedPath PathResolverV0::findPathInLinkMsg(
         const H5SymbolTableEntry& parentEntry,
         const H5LinkMsg& linkMsg,
         const H5Path& remainingPath) {
-    if (linkMsg.linkType() == H5LinkMsg::SOFT) {
-        H5Path targetPath(linkMsg.targetPath());
-        return resolvePathInSymbolTableEntry(parentEntry,
-                                             targetPath + remainingPath);
-    } else if (linkMsg.linkType() == H5LinkMsg::EXTERNAL) {
-        std::string targetFile = linkMsg.targetFile();
-        H5Path targetPath(linkMsg.targetPath());
-        auto output = ResolvedPath{};
-        output.externalFile.reset(new ResolvedPath::ExternalFile{
-                targetFile, targetPath + remainingPath});
-        return output;
+    switch (linkMsg.linkType()) {
+        case H5LinkMsg::SOFT: {
+            H5Path targetPath(linkMsg.targetPath());
+            return resolvePathInSymbolTableEntry(parentEntry,
+                                                 targetPath + remainingPath);
+        }
+        case H5LinkMsg::HARD: {
+            if (std::string(remainingPath).empty())
+                return ResolvedPath{linkMsg.hardLinkObjectHeader(), {}, {}};
+            return findPathInObjectHeader(
+                    parentEntry, linkMsg.hardLinkObjectHeader(),
+                    std::string(remainingPath), H5Path(""));
+        }
+        case H5LinkMsg::EXTERNAL: {
+            std::string targetFile = linkMsg.targetFile();
+            H5Path targetPath(linkMsg.targetPath());
+            return ResolvedPath{
+                    {},
+                    std::unique_ptr<ResolvedPath::ExternalFile>(
+                            new ResolvedPath::ExternalFile{
+                                    targetFile, targetPath + remainingPath}),
+                    {}};
+        }
+        default:
+            throw std::runtime_error("link type " +
+                                     std::to_string(linkMsg.linkType()) +
+                                     " not supported.");
     }
-    throw std::runtime_error("unknown link type" +
-                             std::to_string(linkMsg.linkType()));
 }
 
 uint32_t PathResolverV0::getFractalHeapOffset(
@@ -102,9 +115,9 @@ uint32_t PathResolverV0::getFractalHeapOffset(
 
 ResolvedPath PathResolverV0::findPathInObjectHeader(
         const H5SymbolTableEntry& parentEntry,
+        const H5ObjectHeader& objectHeader,
         const std::string pathItem,
         const H5Path& remainingPath) {
-    H5ObjectHeader objectHeader = parentEntry.objectHeader();
     for (size_t i = 0; i < objectHeader.numberOfMessages(); ++i) {
         auto msg = objectHeader.headerMessage(i);
         switch (msg.type) {
