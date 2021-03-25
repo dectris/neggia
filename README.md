@@ -31,6 +31,7 @@ Wikipedia: https://en.wikipedia.org/wiki/Alpe_di_Neggia
 
 /entry/instrument/detector/detectorSpecific/pixel_mask
     type: uint32
+    chunking must be disabled
     neggia will apply pixel_mask and set data to
           -1 for pixel_mask & 0b00001
           -2 for pixel_mask & 0b11110
@@ -43,6 +44,7 @@ Wikipedia: https://en.wikipedia.org/wiki/Alpe_di_Neggia
     'data_000001' to 'data_999999'
     for a single h5 file without links to external datasets
     '/entry/data/data' will be used to extract image data
+    all data must be chunked frame-wise
 ```
 
 You can check the compatibility requirements by running our test script

@@ -7,3 +7,7 @@ add_executable(check_h5_plugin
   $<TARGET_OBJECTS:NEGGIA_USER>
   check_h5_plugin.cpp
   )
+
+target_link_libraries(check_h5_plugin
+  dl
+)
