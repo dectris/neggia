@@ -18,6 +18,7 @@ struct ResolvedPath {
     };
     H5ObjectHeader objectHeader;
     std::unique_ptr<ExternalFile> externalFile;
+    std::unique_ptr<H5Path> softLink;
 };
 
 #endif  // RESOLVED_PATH_H

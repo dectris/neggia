@@ -39,6 +39,64 @@ size_t H5BTreeVersion2::getLinkAddressByName(
     return getRecordAddressWithinInternalNodeFromLinkHash(hash, rootNode);
 }
 
+namespace {
+template <class T1, class T2>
+int chunkCompare(const T1* key0, const T2* key1, size_t len) {
+    for (size_t i = len; i > 0; --i) {
+        if (key0[i - 1] < key1[i - 1])
+            return -1;
+        if (key0[i - 1] > key1[i - 1])
+            return 1;
+    }
+    return 0;
+}
+}  // namespace
+
+size_t H5BTreeVersion2::getChunkAddressByOffset(
+        const std::vector<size_t> chunkOffset) const {
+    switch (_btreeType) {
+        case 10:
+        case 11: {
+            size_t numDimensions = (_recordSize - 8) / 8;
+            Node rootNode = getRootNode();
+            return getChunkAddressByOffsetWithinInternalNode(chunkOffset,
+                                                             rootNode);
+        }
+        default:
+            throw std::runtime_error("btree type " +
+                                     std::to_string((int)_btreeType) +
+                                     " not supported to extract data chunks.");
+    }
+}
+
+size_t H5BTreeVersion2::getChunkAddressByOffsetWithinInternalNode(
+        const std::vector<size_t> chunkOffset,
+        const Node& node) const {
+    bool found = false;
+    for (size_t record = 0; record < node.numberOfRecords; ++record) {
+        size_t recordOffset = 6 + record * _recordSize;
+        size_t chunkAddress = node.read_u64(recordOffset);
+        int compare = chunkCompare(
+                chunkOffset.data(),
+                (const uint64_t*)node.address(recordOffset + _recordSize -
+                                              chunkOffset.size() * 8),
+                chunkOffset.size());
+        if (compare < 0) {
+            if (node.depth == 0)
+                throw std::out_of_range("chunk not found");
+            return getChunkAddressByOffsetWithinInternalNode(
+                    chunkOffset, getChildNode(node, record));
+        }
+        if (compare == 0) {
+            return chunkAddress;
+        }
+    }
+    if (node.depth == 0)
+        throw std::out_of_range("hash not found");
+    return getChunkAddressByOffsetWithinInternalNode(
+            chunkOffset, getChildNode(node, node.numberOfRecords));
+}
+
 void H5BTreeVersion2::init() {
     std::string signature = std::string(address(), 4);
     assert(signature == "BTHD");

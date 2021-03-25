@@ -109,7 +109,7 @@ size_t Dataset::chunkDataSize() const {
 }
 
 void Dataset::read(void* data, const std::vector<size_t>& chunkOffset) const {
-    auto rawData = _dataLayoutMsg.getRawData(chunkOffset);
+    auto rawData = _dataLayoutMsg.getRawData(_dataSize, chunkOffset);
     size_t s = chunkDataSize();
     switch (_filterId) {
         case -1:
@@ -122,7 +122,8 @@ void Dataset::read(void* data, const std::vector<size_t>& chunkOffset) const {
             readBitshuffleData(rawData, data, s);
             break;
         default:
-            throw std::runtime_error("Unknown filter");
+            throw std::runtime_error("filter " + std::to_string(_filterId) +
+                                     " not supported.");
     }
 }
 
@@ -144,7 +145,7 @@ void Dataset::parseDataSymbolTable() {
             }
             case H5FilterMsg::TYPE_ID: {
                 H5FilterMsg filterMsg(msg.object);
-                // We accept at most on filter
+                // We accept at most one filter
                 assert(filterMsg.nFilters() <= 1);
                 if (filterMsg.nFilters() == 1)
                     _filterId = filterMsg.filterId(0);

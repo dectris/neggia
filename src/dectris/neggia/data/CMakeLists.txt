@@ -7,7 +7,9 @@ add_library(NEGGIA_DATA OBJECT
   H5DataLayoutMsg.cpp
   H5DataspaceMsg.cpp
   H5DatatypeMsg.cpp
+  H5ExtensibleArray.cpp
   H5FilterMsg.cpp
+  H5FixedArray.cpp
   H5FractalHeap.cpp
   H5LinkInfoMessage.cpp
   H5LinkMsg.cpp

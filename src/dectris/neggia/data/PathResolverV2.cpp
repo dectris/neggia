@@ -24,6 +24,9 @@ ResolvedPath PathResolverV2::resolvePathInHeader(const H5ObjectHeader& in,
     {
         auto resolvedPath = findPathInObjectHeader(
                 parentEntry, *itemIterator, H5Path(path, itemIterator + 1));
+        if (resolvedPath.softLink) {
+            return resolvePathInHeader(parentEntry, *resolvedPath.softLink);
+        }
         if (resolvedPath.externalFile) {
             // the object is in a different file which must be opened by
             // upper layer
@@ -34,7 +37,7 @@ ResolvedPath PathResolverV2::resolvePathInHeader(const H5ObjectHeader& in,
         }
         parentEntry = resolvedPath.objectHeader;
     }
-    return ResolvedPath{parentEntry, {}};
+    return ResolvedPath{parentEntry, {}, {}};
 }
 
 ResolvedPath PathResolverV2::findPathInLinkMsg(
@@ -42,8 +45,15 @@ ResolvedPath PathResolverV2::findPathInLinkMsg(
         const H5LinkMsg& linkMsg,
         const H5Path& remainingPath) {
     switch (linkMsg.linkType()) {
+        case H5LinkMsg::SOFT: {
+            H5Path targetPath(linkMsg.targetPath());
+            return ResolvedPath{{},
+                                {},
+                                std::unique_ptr<H5Path>(new H5Path(
+                                        targetPath + remainingPath))};
+        }
         case H5LinkMsg::HARD: {
-            return ResolvedPath{linkMsg.hardLinkObjectHeader(), {}};
+            return ResolvedPath{linkMsg.hardLinkObjectHeader(), {}, {}};
         }
         case H5LinkMsg::EXTERNAL: {
             std::string targetFile = linkMsg.targetFile();
@@ -52,7 +62,8 @@ ResolvedPath PathResolverV2::findPathInLinkMsg(
                     {},
                     std::unique_ptr<ResolvedPath::ExternalFile>{
                             new ResolvedPath::ExternalFile{
-                                    targetFile, targetPath + remainingPath}}};
+                                    targetFile, targetPath + remainingPath}},
+                    {}};
         }
         default:
             throw std::runtime_error("unknown link type " +
@@ -98,7 +109,7 @@ ResolvedPath PathResolverV2::findPathInObjectHeader(
                                           linkInfoMsg.getFractalHeapAddress());
                 H5LinkMsg linkMsg(fractalHeap.getHeapObject(heapOffset));
                 assert(linkMsg.linkName() == pathItem);
-                return ResolvedPath{linkMsg.hardLinkObjectHeader(), {}};
+                return findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
             }
         }
     }

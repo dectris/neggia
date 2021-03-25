@@ -13,6 +13,7 @@ public:
     H5BTreeVersion2(const H5Object& obj);
     size_t getNumberOfRecords() const;
     size_t getLinkAddressByName(const std::string& linkName) const;
+    size_t getChunkAddressByOffset(const std::vector<size_t> chunkOffset) const;
 
 private:
     struct Node : public H5Object {
@@ -29,6 +30,9 @@ private:
                                               const Node& node) const;
     size_t getRecordAddressWithinInternalNodeFromLinkHash(
             uint32_t linkHash,
+            const Node& node) const;
+    size_t getChunkAddressByOffsetWithinInternalNode(
+            const std::vector<size_t> chunkOffset,
             const Node& node) const;
     Node getChildNode(const Node& parentNode, size_t childNodeNumber) const;
     size_t getChildNodeAddress(const Node& parentNode,

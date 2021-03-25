@@ -20,7 +20,8 @@ public:
     uint8_t version() const;
     uint8_t layoutClass() const;
 
-    ConstDataPointer getRawData(const std::vector<size_t>& chunkOffset) const;
+    ConstDataPointer getRawData(size_t elementSize,
+                                const std::vector<size_t>& chunkOffset) const;
 
     bool isChunked() const;
     std::vector<size_t> chunkShape() const;
@@ -38,7 +39,18 @@ private:
     const char* dataAddress() const;
 
     /// for chunked data (layout class 2)
-    H5BLinkNode chunkBTree() const;
+    ConstDataPointer chunkedDataV3(
+            const std::vector<size_t>& chunkOffset) const;
+    ConstDataPointer chunkedDataV4(
+            size_t elementSize,
+            const std::vector<size_t>& chunkOffset) const;
+    const char* addressFromFixedArrayStorage(
+            const std::vector<size_t>& chunkOffset) const;
+    const char* addressFromExtensibleArrayStorage(
+            const std::vector<size_t>& chunkOffset) const;
+    const char* addressFromBTreeV2Storage(
+            const std::vector<size_t>& chunkOffset) const;
+
     H5Object extractDataChunk(const std::vector<size_t>& chunkOffset) const;
     size_t dimensionSize() const;
     uint8_t chunkIndexingType() const;
