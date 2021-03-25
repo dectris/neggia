@@ -149,6 +149,15 @@ def check_file(filename):
         )
 
     try:
+        pm_chunks = detectorSpecific["pixel_mask"].chunks
+        if pm_chunks is not None:
+            print_fail(
+                f"""'/entry/instrument/detector/detectorSpecific/pixel_mask' 2D data may not be chunked.
+       Please save your pixel mask with disabled chunking.
+       In python you can do this by adding argument 'chunks=None' to method create_dataset.
+"""
+            )
+        pm_shape = detectorSpecific["pixel_mask"].shape
         pm = detectorSpecific["pixel_mask"][()]
         if pm.dtype == np.uint32:
             print_ok(
@@ -185,6 +194,20 @@ def check_file(filename):
        neggia will ignore this entry."""
             )
         else:
+            data_chunks = master[path].chunks
+            data_shape = master[path].shape
+            if data_chunks is None:
+                print_fail(f"image data in '{path}' must be chunked")
+            if len(data_shape) != 3:
+                print_fail(f"expected 3-dimensional data for '{path}'")
+            if (data_shape[1], data_shape[2]) != (pm_shape[0], pm_shape[1]):
+                print_fail(
+                    f"""expected image data shape (any, {pm_shape[0]}, {pm_shape[1]}) but got {data_shape}
+       this shape is deduced from the shape of the pixel mask. (perhaps transposed?)"""
+                )
+            expected_chunks = (1, data_shape[1], data_shape[2])
+            if data_chunks != expected_chunks:
+                print_fail(f"expected chunks {expected_chunks} but got {data_chunks}")
             count_data_entries_correct_format += 1
     if count_data_entries_correct_format == 0:
         print_fail(f"no entries with correct format found in '/entry/data'")
