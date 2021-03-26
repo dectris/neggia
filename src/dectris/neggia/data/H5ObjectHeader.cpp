@@ -230,11 +230,7 @@ void H5ObjectHeader::_printMsgDebug(const H5HeaderMessage& msg) {
         case H5LinkInfoMsg::TYPE_ID: {
             auto typedMsg = H5LinkInfoMsg(msg.object);
             std::cerr << "  Link Info Message [0x" << std::hex
-                      << H5LinkInfoMsg::TYPE_ID
-                      << "] - fractal heap address: 0x"
-                      << typedMsg.getFractalHeapAddress()
-                      << ", b-tree address: 0x" << typedMsg.getBTreeAddress()
-                      << std::dec << "\n";
+                      << H5LinkInfoMsg::TYPE_ID << "]" << std::dec << "\n";
             break;
         }
         case H5DatatypeMsg::TYPE_ID: {
