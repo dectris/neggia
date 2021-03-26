@@ -71,19 +71,6 @@ ResolvedPath PathResolverV2::findPathInLinkMsg(
     }
 }
 
-uint32_t PathResolverV2::getFractalHeapOffset(
-        const H5LinkInfoMsg& linkInfoMsg,
-        const std::string& pathItem) const {
-    size_t btreeAddress = linkInfoMsg.getBTreeAddress();
-    if (btreeAddress == H5_INVALID_ADDRESS) {
-        throw std::out_of_range("Invalid address");
-    }
-    H5BTreeVersion2 btree(_root.fileAddress(), btreeAddress);
-    H5Object heapRecord(_root.fileAddress(),
-                        btree.getLinkAddressByName(pathItem));
-    return heapRecord.read_u32(5);
-}
-
 ResolvedPath PathResolverV2::findPathInObjectHeader(
         const H5ObjectHeader& parentEntry,
         const std::string pathItem,
@@ -98,18 +85,15 @@ ResolvedPath PathResolverV2::findPathInObjectHeader(
                 return findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
             }
             case H5LinkInfoMsg::TYPE_ID: {
-                uint32_t heapOffset;
                 H5LinkInfoMsg linkInfoMsg(msg.object);
                 try {
-                    heapOffset = getFractalHeapOffset(linkInfoMsg, pathItem);
+                    auto linkMsg = linkInfoMsg.getLinkMessage(
+                            _root.fileAddress(), pathItem);
+                    return findPathInLinkMsg(parentEntry, linkMsg,
+                                             remainingPath);
                 } catch (const std::out_of_range&) {
                     continue;
                 }
-                H5FractalHeap fractalHeap(_root.fileAddress(),
-                                          linkInfoMsg.getFractalHeapAddress());
-                H5LinkMsg linkMsg(fractalHeap.getHeapObject(heapOffset));
-                assert(linkMsg.linkName() == pathItem);
-                return findPathInLinkMsg(parentEntry, linkMsg, remainingPath);
             }
         }
     }

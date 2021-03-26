@@ -143,18 +143,36 @@ void CheckFile(const std::string& filename, uint8_t superblock_version) {
     H5Superblock superblock(h5File.fileAddress());
     ASSERT_EQ(superblock.version(), superblock_version);
     auto resolvedPath = superblock.resolve(H5Path("/data"));
+    int links = 0;
     for (int i = 0, e = resolvedPath.objectHeader.numberOfMessages(); i < e;
          ++i) {
-        // In superblock 0 we do not want to have a Symbol Table Entry Message
-        // (0x11) in /data to be able to test hard links. We achieve this during
-        // file creation by first adding an external link in /data and
-        // afterwards the hard link. If we don't do that there won't be any hard
-        // link messages but the Symbol Table will just include the address of
-        // the object directly.
+        // We need to make sure that each type of link exists in /data
+        // as the creation of these messages in superblock version 0
+        // is creation order dependent and under some circumstances
+        // hard link messages won't be created.
         auto msg = resolvedPath.objectHeader.headerMessage(i);
-        ASSERT_NE(msg.type, 0x11)
-                << "unexpected 'Symbol Table Entry Message' (0x11) in /data";
+        switch (msg.type) {
+            case H5LinkMsg::TYPE_ID: {
+                auto typedMsg = H5LinkMsg(msg.object);
+                links |= (1 << typedMsg.linkType());
+                break;
+            }
+            case H5LinkInfoMsg::TYPE_ID: {
+                auto typedMsg = H5LinkInfoMsg(msg.object);
+                auto hard = typedMsg.getLinkMessage(h5File.fileAddress(),
+                                                    "chunked_hard");
+                links |= (1 << hard.linkType());
+                auto soft = typedMsg.getLinkMessage(h5File.fileAddress(),
+                                                    "chunked_soft");
+                links |= (1 << soft.linkType());
+                auto ext = typedMsg.getLinkMessage(h5File.fileAddress(),
+                                                   "chunked_external");
+                links |= (1 << ext.linkType());
+                break;
+            }
+        }
     }
+    ASSERT_EQ(links, 0x7);
     CheckChunkedData<ValueType>(filename);
     CheckNotChunkedData<ValueType>(filename);
 }

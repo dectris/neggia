@@ -20,8 +20,6 @@ private:
                                         const H5ObjectHeader& objectHeader,
                                         const std::string pathItem,
                                         const H5Path& remainingPath);
-    uint32_t getFractalHeapOffset(const H5LinkInfoMsg& linkInfoMsg,
-                                  const std::string& pathItem) const;
     ResolvedPath findPathInLinkMsg(const H5SymbolTableEntry& parentEntry,
                                    const H5LinkMsg& linkMsg,
                                    const H5Path& remainingPath);
